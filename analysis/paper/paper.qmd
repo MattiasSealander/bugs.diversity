@@ -1,0 +1,252 @@
+---
+title: "Title Goes Here"
+author:
+ - "Mattias Sjölander":
+      correspondence: "yes"
+      email: mattias.sjolander@arkeologi.uu.se
+      orcid: 0000-0003-4530-9784
+      institute: [UU]
+ - "Philip Buckland":
+      correspondence: "no"
+      email: philip.buckland@umu.se
+      orcid: 0000-0002-2430-0839
+      institute: [UmU]
+institute:
+  - UU:
+      name: Department of Archaeology and Ancient History and Conservation
+      address: Engelska parken, Thunbergsvägen 3H, 751 20 Uppsala, Sweden
+  - UmU:
+      name: Department of Historical, Philosophical and Religious Studies, Umeå University
+      address: Humanisthuset, Petrus Laestadius väg, 907 36 Umeå, Sweden
+title-block-published: "Last updated"  
+date: now
+date-format: long
+header-includes:
+  - \usepackage{koma-script}
+format: 
+  docx:
+    reference-doc: "../templates/template.docx" # Insert path for the DOCX file
+execute:
+  echo: true
+  warning: false  
+  message: false
+  comment: "#>"
+  fig-path: "../figures/"
+  fig-dpi: 300
+filters:
+  - ../templates/scholarly-metadata.lua
+  - ../templates/author-info-blocks.lua
+  - ../templates/pagebreak.lua
+bibliography: references.bib
+csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
+abstract: |
+  Text of abstract
+keywords: |
+  palaeoentomology; biodiversity; ecology; Holocene; Europe
+highlights: |
+  These are the highlights. 
+---
+
+<!-- This is the format for text comments that will be ignored during renderings. Do not put R code in these comments because it will not be ignored. -->
+
+<!-- With the following code you can access and display values from the yml header above. -->
+
+Keywords: `r rmarkdown::metadata$keywords`
+
+Highlights: `r rmarkdown::metadata$highlights`
+
+<!-- The actual document text starts here: -->
+
+<!-- The following code chunk defines some general settings how code chunks should behave. -->
+```{r setup, echo = FALSE}
+library(officer)
+library(officedown)
+library(magick)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  comment = "#>",
+  fig.path = "../figures/",
+  dpi = 300,
+  encoding = "UTF-8"
+)
+```
+
+<!-- The following function can be used to suppress message outputs -->
+```{r}	
+quietly <- function(x) {	
+  sink(tempfile())	
+  on.exit(sink())	
+  invisible(force(suppressMessages(x)))	
+}	
+```
+
+<!-- The following code chunk is used for inline calculations of samples and sites -->
+```{r sample-count, results='hide'}
+suppressPackageStartupMessages(library(tidyverse))
+
+# Import site and species data
+bugs.csv <-
+  read.csv2(here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"), sep = ";", dec = ".", header = TRUE, na = c("", "NA", "NULL"), encoding = "UTF-8")
+
+# Filter out unique sites for period and region of study
+sites <- 
+  bugs.csv %>% 
+  mutate(age_range=age_older - age_younger) %>%
+  filter(context == "Stratigraphic sequence", sample != "BugsPresence", between(age_older, -500, 16000) & between(age_younger, -500, 16000),
+         age_range <= 2000, !country == "Greenland") %>%
+  select(site) %>% 
+  distinct()
+
+# Filter out unique samples for period and region of study
+samples <-  
+  bugs.csv %>% 
+  mutate(age_range=age_older - age_younger) %>% 
+  filter(context == "Stratigraphic sequence", sample != "BugsPresence", between(age_older, -500, 16000) & between(age_younger, -500, 16000),
+         age_range <= 2000, !country == "Greenland") %>%
+  select(site, sample_group, sample) %>% 
+  distinct()
+```
+
+# Introduction
+
+
+# Background
+
+# Material and Methods
+
+The analysis is based on data retrieved from the BugsCEP constituent database (https://bugscep.com) [@buckland_buckland2006] of the open access Strategic Environmental Archaeology Database (SEAD; https://sead.se) [@buckland_etal2018]. The study area is restricted to Europe during the Late Glacial - Holocene period, which has good coverage within the database (https://browser.sead.se/palaeoentomology). The study includes a total of `r nrow(sites)` sites from which `r nrow(samples)` samples have been collected. All of the samples come from natural deposits, with little to no signs of human influence (e.g. peat bogs, lakes) @fig-sites-overview.
+
+
+ \linebreak
+
+```{r}
+#| label: fig-sites-overview
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "2400"
+#| out.width: "2400px"
+#| fig-cap: "Sample age distribution. Nr. of samples are summarised for each age bin they intersect. Samples collected from natural deposits showcase a bimodal distribution, with peaks around the Late glacial and the last ~ 5 000 years."
+
+quietly(source(here::here("analysis", "paper", "001-sites-overview.R"), encoding = "UTF-8"))
+knitr::include_graphics(here::here("analysis", "figures", "001-sites-overview.jpg"), error = FALSE)
+```
+
+
+ \linebreak
+
+The dataset was filtered temporally according to the process outlined in [@pilotto_etal2022]. Any samples with a mid-point that dated older than 16 000 years BP, and with an age range larger than 2 000 years, were excluded from the study. Samples that feature large age ranges contribute a certain level of noise to the data and makes it difficult to discern smaller changes over time. By aggregating the data in this way it likewise makes comparisons with the results from Pilotto et al.’s [-@pilotto_etal2022] study possible. 
+
+Spatially the dataset has been analysed by regional groups…(by whatever the final decision is)...
+
+Analysis was performed in the R statistical open-source software [@rcore2021; ver. 4.4.2]. A number of species richness and diversity metrics (Shannon and Simpson index) have been explored, using raw counts, rarefaction and Scaling with Ranked Subsampling (SRS). Rarefaction is a common method used in ecology to standardize samples with variable sample depth [@sanders1968]. Effectively, samples (individuals) are discarded randomly from samples larger than the threshold set by the analyst. The method has received criticism, however, for its poor reproducibility and issues related to unequal sample sizes [@mcmurdie_holmes2014; @willis2019]. An alternative to rarefaction is SRS, which like rarefaction scales the dataset based on a threshold set by the analyst, but makes use of a form of ranked subsampling that aims to preserve the population structure [@beule_karlovsky2020].  
+
+In the current dataset there is a visible spike in the number of samples with a sampling depth between 5 - 10 individuals, after which the frequency decreases with increasing abundance. Higher threshold sizes will result in the exclusion of a high number of samples as well as species, and as such the decision was made to set the threshold at 10 individuals for rarefaction and SRS. Rarefaction and diversity statistics were calculated using the vegan package [@oksanen_etal2024]. SRS was performed with the SRS package [@heidrich_etal2021].
+Environmental reconstructions were performed according to the BugsCEP procedure [@buckland2007: 101-117]. Fossil insect data was summarised for each 500 year bin a sample intersected and standardised across each habitat type. Two separate reconstructions were generated and evaluated, one that is based on presence only counts of taxa and one that is abundance weighted. Beta diversity was analysed using the species turnover function from the codyn R package [@hallett_etal2020]. 
+The BugsCEP dataset is mainly clustered around northwestern Europe, in particular within Great Britain (Figure 1). A similar skewed distribution can also be seen temporally [@fig-sample-dates]. Samples from natural deposits are represented across the entire study period, but also exhibit a bimodal distribution with peaks around the Late Glacial and ca. 4 000 - 2 000 BP. 
+
+ \linebreak
+
+```{r}
+#| label: fig-sample-dates
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "1800px"
+#| out.width: "2400px"
+#| fig-cap: "Sample age distribution. Nr. of samples are summarised for each age bin they intersect. Samples collected from natural deposits showcase a bimodal distribution, with peaks around the Late glacial and the last ~ 5 000 years."
+
+quietly(source(here::here("analysis", "paper", "001-sample-date-distribution.R"), encoding = "UTF-8"))
+knitr::include_graphics(here::here("analysis", "figures", "001-sample-date-distribution.jpg"), error = FALSE)
+```
+
+ \linebreak
+
+# Results
+
+ \linebreak
+
+```{r}
+#| label: fig-richness
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "2600px"
+#| out.width: "1800px"
+#| fig-cap: "Sample age distribution. Nr. of samples are summarised for each age bin they intersect. Samples collected from natural deposits showcase a bimodal distribution, with peaks around the Late glacial and the last ~ 5 000 years."
+
+quietly(source(here::here("analysis", "paper", "002-richness-comparison.R"), encoding = "UTF-8"))
+knitr::include_graphics(here::here("analysis", "figures", "002-richness-comparison.jpg"), error = FALSE)
+```
+
+ \linebreak
+
+```{r}
+#| label: fig-rac
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "4200px"
+#| out.width: "3300px"
+#| fig-cap: "Sample age distribution. Nr. of samples are summarised for each age bin they intersect. Samples collected from natural deposits showcase a bimodal distribution, with peaks around the Late glacial and the last ~ 5 000 years."
+
+quietly(source(here::here("analysis", "paper", "004-rank-abundance-curves.R"), encoding = "UTF-8"))
+knitr::include_graphics(here::here("analysis", "figures", "004-rank-abundance-curves.jpg"), error = FALSE)
+```
+
+ \linebreak
+
+```{r}
+#| label: fig-turnover
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "2100px"
+#| out.width: "1500px"
+#| fig-cap: "Sample age distribution. Nr. of samples are summarised for each age bin they intersect. Samples collected from natural deposits showcase a bimodal distribution, with peaks around the Late glacial and the last ~ 5 000 years."
+
+quietly(source(here::here("analysis", "paper", "004-species-turnover.R"), encoding = "UTF-8"))
+knitr::include_graphics(here::here("analysis", "figures", "004-species-turnover.jpg"), error = FALSE)
+```
+
+ \linebreak
+# Discussion
+
+# Conclusion
+
+# Acknowledgements
+
+<!-- The following line inserts a page break  -->
+
+\newpage
+
+# References
+
+<!-- The following line ensures the references appear here for the MS Word or HTML output files, rather than right at the end of the document (this will not work for PDF files):  -->
+
+::: {#refs}
+:::
+
+\newpage
+
+### Colophon
+
+This report was generated on `r Sys.time()` using the following computational environment and dependencies:
+
+```{r}
+#| label: colophon
+#| cache: false
+
+# which R packages and versions?
+if ("devtools" %in% installed.packages()) devtools::session_info()
+```
+
+The current Git commit details are:
+
+```{r}
+# what commit is this file at? 
+if ("git2r" %in% installed.packages() & git2r::in_repository(path = ".")) git2r::repository(here::here())  
+```
