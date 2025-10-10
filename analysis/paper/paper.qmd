@@ -1,11 +1,21 @@
 ---
-title: "Title Goes Here"
+title: "This world is a buggy program: European trends in Coleopteran diversity during the Holocene"
 author:
  - "Mattias Sjölander":
       correspondence: "yes"
       email: mattias.sjolander@arkeologi.uu.se
       orcid: 0000-0003-4530-9784
       institute: [UU]
+ - "Nick Schafstall":
+      correspondence: "no"
+      email: nick.schafstall@gmail.com
+      orcid: 0000-xxxx-xxxx-xxxx
+      institute: []
+ - "Scott Cocker":
+      correspondence: "no"
+      email: scott.cocker@geo.su.se
+      orcid: 0000-xxxx-xxxx-xxxx
+      institute: [SU]
  - "Philip Buckland":
       correspondence: "no"
       email: philip.buckland@umu.se
@@ -15,6 +25,9 @@ institute:
   - UU:
       name: Department of Archaeology and Ancient History and Conservation
       address: Engelska parken, Thunbergsvägen 3H, 751 20 Uppsala, Sweden
+  - SU:
+      name: Department of Geological Sciences
+      address: Stockholm University, Svante Arrhenius väg 8, 114 18 Stockholm, Sweden
   - UmU:
       name: Department of Historical, Philosophical and Religious Studies, Umeå University
       address: Humanisthuset, Petrus Laestadius väg, 907 36 Umeå, Sweden
@@ -113,7 +126,10 @@ samples <-
 # Introduction
 
 
-# Background
+# Aims
+The aim of this study is to synthesize Coleopteran fossil insect data from Europe during the Late Glacial - Holocene period. Large-scale spatiotemporal analysis of fossil insect data is rare, and this paper strives to highlight the current state-of-knowledge in regards to trends in  biodiversity of Coleoptera. 
+
+study the response in biodiversity of Coleoptera to periods of biotic transitions in Europe during the Late Glacial - Holocene period. It has previously been demonstrated that changes in the richness of plant taxa not necessarily followed the expected patterns during periods of climatic change (Giesecke et al. 2019). Whilst Coleoptera seem to follow similar large scale patterns they likewise indicate a more dynamic change in the landscape as a response to increased human influence (Pilotto et al. 2022). This study performs large-scale habitat reconstructions of fossil insect data and species richness analysis in an effort to more accurately describe these biotic transitions. 
 
 # Material and Methods
 
