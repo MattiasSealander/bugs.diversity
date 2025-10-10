@@ -1,295 +1,228 @@
-pacman::p_load(ggh4x, ggsci, ggplot2, tidyverse, vegan, procs, data.table, IRanges)
+############################################################
+# Purpose: Perform regional ecological composition analysis
+#          of fossil insect data using Bugs ecocodes
+# Methods:
+#   1. Bin samples into 500-year time intervals
+#   2. Calculate proportional ecocode composition per bin
+#   3. Normalize using abundance-weighted and non-abundance
+#      (presence-based) methods (Buckland 2007)
+#   4. Visualizes regionally using stacked bar plots
+############################################################
 
-#Import site and species data
-bugs.csv <-
-  read.csv2(here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"), sep = ";", dec = ".", header = TRUE, na = c("", "NA", "NULL"), encoding = "UTF-8")
+# ---- Load packages ----
+pacman::p_load(data.table, ggh4x, ggsci, IRanges, procs, tidyverse, vegan)
 
-#Import ecocodes
-eco.csv <-
-  read.csv2(here::here("analysis", "data", "raw_data", "sead_ecocodes_20250114.csv"), sep = ",", dec = ".", header = TRUE, na = c("", "NA", "NULL"), encoding = "UTF-8")
+# ---- 1. Import site and species data ----
+bugs <-
+  fread(here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"), na.strings = c("", "NA", "NULL"), encoding = "UTF-8")
 
-#filter data and pivot insect species with abundance values, grouped by (site + date + sample group + sample)
-time.mat <-
-  bugs.csv %>%
-  select (country, sample, site, sample_group, age_older, age_younger, context) %>%
-  mutate(age_range=age_older - age_younger) %>%
-  filter(context == "Stratigraphic sequence", sample != "BugsPresence", between(age_older, -500, 16000) & between(age_younger, -500, 16000), age_range <= 2000,
+# ---- 2. Import ecocodes ----
+eco <-
+  fread(here::here("analysis/data/raw_data/sead_ecocodes_20250114.csv"), na.strings = c("", "NA", "NULL"), encoding = "UTF-8")
+
+# ---- 3. Filter and structure sample-level metadata ----
+# Keep only stratigraphic sequence samples within the target time range,
+# create combined sample identifiers, and compute age intervals.
+time.mat <- bugs %>%
+  select(country, sample, site, sample_group, age_older, age_younger, context) %>%
+  mutate(age_range = age_older - age_younger) %>%
+  filter(context == "Stratigraphic sequence",
+         sample != "BugsPresence",
+         between(age_older, -500, 16000),
+         between(age_younger, -500, 16000),
+         age_range <= 2000,
          country != "Greenland") %>%
-  distinct() %>%
-  select(-age_range, -context) %>%
-  mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
-  column_to_rownames("sample") %>%
-  select(-country, -site, -sample_group) %>%
-  dplyr::rename(start = age_younger, end = age_older)
+  distinct(sample, sample_group, site, .keep_all = TRUE) %>%
+  transmute(sample = paste(sample, sample_group, site, sep = "@"),
+            start = age_younger,
+            end   = age_older)
 
-#select date bin(s)
-range <- data.frame(
-  start = c(-500, seq(1, 15501, by = 500)),
-  end = seq(0, 16000, by = 500))
+# ---- 4. Define 500-year temporal bins ----
+range <- tibble(start = c(-500, seq(1, 15501, 500)),
+                end = seq(0, 16000, 500))
 
-#find what samples overlap in time with the specified date bin(s)
-intersection <-
-  findOverlaps(query = do.call(IRanges, time.mat), subject = do.call(IRanges, range), type = "any")
+# ---- 5. Compute sample–time bin overlaps ----
+# Use IRanges to detect which samples overlap with which time bins.
+ir_samples <-
+  IRanges(start = time.mat$start, end = time.mat$end)
+ir_bins <-
+  IRanges(start = range$start, end = range$end)
+ov <-
+  findOverlaps(ir_samples, ir_bins, type = "any")
 
-#Retrieve the hits from the intersection and name of samples
-hits <-
-  data.frame(time.mat[queryHits(intersection),], range[subjectHits(intersection),]) %>%
-  #retrieve concatenated row name
-  as_tibble(rownames = "sample") %>%
-  #separate concatenation
-  separate(col = sample,
-           sep = "@",
-           into = c("sample", "sample_group", "site")) %>%
-  inner_join(bugs.csv, by = c("sample", "sample_group"), relationship = "many-to-many") %>%
-  select(-start, -end)
+# ---- 6. Build table linking samples to time bins ----
+# Includes site, sample_group, and bin metadata.
+hits <- tibble(
+  sample     = time.mat$sample[queryHits(ov)],
+  sample_start = time.mat$start[queryHits(ov)],
+  sample_end   = time.mat$end[queryHits(ov)],
+  bin_start    = range$start[subjectHits(ov)],
+  bin_end      = range$end[subjectHits(ov)]
+) %>%
+  # split the sample id back into components
+  separate(col = "sample", into = c("sample", "sample_group", "site"), sep = "@", remove = FALSE) %>%
+  # now join original bugs csv (adjust the join keys if needed)
+  inner_join(bugs, by = c("sample", "sample_group"), relationship = "many-to-many") %>%
+  select(-sample_start, -sample_end)
 
-#join taxa with ecocodes
-eco.species <-
-  eco.csv %>%
-  select(-author_name, -family_name, -genus_name, -species) %>%
-  inner_join(hits, by = "taxon", relationship = "many-to-many") %>%
+# ---- 7. Merge ecocode classifications and assign geographic regions ----
+eco.species <- eco %>%
   filter(ecocode_system == "Bugs") %>%
-  select(site.x, latitude, longitude, sample_group, sample, end.1, ecocode, abundance, taxon) %>%
-  mutate(sample = paste(sample, sample_group, site.x, sep = "@")) %>%
-  distinct() %>%
-  mutate(place = case_when(
-    between(latitude, 53.5, 74.8) & between(longitude, 2.8, 41) ~ "Scandinavia/Baltic",
-    between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
-    between(latitude, 63, 66.3) & between(longitude, -25, -12) ~ "Iceland",
-    latitude < 45 ~ "Meridional")) %>%
-  mutate(region = ifelse(is.na(place),
-                         "Continental",
-                         place)) %>%
-  select(-site.x, -sample_group, -latitude, -longitude)
+  inner_join(hits, by = "taxon") %>%
+  transmute(
+    sample = paste(sample, sample_group, site.x, sep = "@"),
+    ecocode, abundance, taxon, end = bin_end,
+    region = case_when(
+      between(latitude, 53.5, 74.8) & between(longitude, 2.8, 41) ~ "Scandinavia/Baltic",
+      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+      between(latitude, 63, 66.3) & between(longitude, -25, -12) ~ "Iceland",
+      latitude < 45 ~ "Meridional",
+      TRUE ~ "Continental"
+    )
+  ) %>%
+  distinct()
 
-
-# Species matrix of raw values
-# Filter data and pivot insect species with abundance values, grouped by (site + date + sample group + sample)
-abund.mat <-
-  eco.species %>%
-  select (end = end.1, abundance, ecocode) %>%
-  group_by(end) %>%
-  pivot_wider(id_cols = end,
-              names_from = ecocode,
-              values_from = c(abundance),
-              values_fn = function(x) sum(x),
-              values_fill = 0) %>%
-  ungroup() %>%
-  #standardise the counts according to Buckland (2007) https://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-1105
-  #this is "Abundance weighted; %SumRep"
-  #code based on https://stackoverflow.com/questions/66710455/how-to-divide-a-columns-values-by-the-sum-of-multiple-column-values-by-row
-  mutate(test = select(., 2:23)/select(., 2:23) %>%
-           rowSums(na.rm = TRUE) * 100) %>%
-  select(-2:-23) %>%
-  unnest(cols = c(test)) %>%
-  pivot_longer(2:23) %>%
-  mutate(type = "Abundance Weighted")
-
-# List with data split by region
-Listdf <- split(eco.species[,-7], eco.species$region)
-
-# Prepare empty list
-abund.list = list()
-noabund.list = list()
-
-# Loop through data and generate diversity metrics
-for (i in 1:length(Listdf)) {
-  abund.list[[i]] = data.frame(
-    Listdf[[i]] %>%
-      select (end = end.1, abundance, ecocode) %>%
-      group_by(end) %>%
-      pivot_wider(id_cols = end,
-                  names_from = ecocode,
-                  values_from = c(abundance),
-                  values_fn = function(x) sum(x),
-                  values_fill = 0) %>%
-      ungroup() %>%
-      #standardise the counts according to Buckland (2007) https://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-1105
-      #this is "Abundance weighted; %SumRep"
-      #code based on https://stackoverflow.com/questions/66710455/how-to-divide-a-columns-values-by-the-sum-of-multiple-column-values-by-row
-      mutate(test = select(., 2:ncol(.))/select(., 2:ncol(.)) %>%
-               rowSums(na.rm = TRUE) * 100) %>%
-      select(-2:-(ncol(.)-1)) %>%
-      unnest(cols = c(test)) %>%
-      pivot_longer(2:ncol(.)) %>%
-      mutate(type = "Abundance Weighted")
-  )
-
-  noabund.list[[i]] = data.frame(
-    Listdf[[i]] %>%
-      select (end = end.1, abundance, taxon, ecocode) %>%
-      distinct() %>%
-      group_by(end) %>%
-      pivot_wider(id_cols = end,
-                  names_from = ecocode,
-                  values_from = taxon,
-                  values_fn = list(taxon = length)) %>%
-      ungroup() %>%
-      #standardise the counts according to Buckland (2007) https://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-1105
-      #this is "No abundance; %SumRep"
-      #below code based on https://stackoverflow.com/questions/66710455/how-to-divide-a-columns-values-by-the-sum-of-multiple-column-values-by-row
-      mutate(test = select(., 2:ncol(.))/select(., 2:ncol(.)) %>%
-               rowSums(na.rm = TRUE) * 100) %>%
-      select(-2:-(ncol(.)-1)) %>%
-      unnest(cols = c(test)) %>%
-      pivot_longer(2:ncol(.)) %>%
-      mutate(type = "No Abundance")
-  )
+# ---- 8. Helper function: Prepare ecocode data per region ----
+# Creates proportional ecocode composition for each time bin.
+# type_label = "Abundance Weighted" (sum) or "No Abundance" (count only).
+prep_ecocode_data <- function(data, end_col, value_col, group_cols, type_label) {
+  data %>%
+    select(end = {{ end_col }}, all_of(group_cols), value = {{ value_col }}) %>%
+    group_by(end) %>%
+    pivot_wider(
+      id_cols = end,
+      names_from = all_of(group_cols),
+      values_from = value,
+      values_fn = function(x) if (type_label == "No Abundance") length(x) else sum(x),
+      values_fill = 0
+    ) %>%
+    ungroup() %>%
+    # Normalize each time bin to sum to 100%
+    rowwise() %>%
+    mutate(across(-end, ~ .x / sum(c_across(-end), na.rm = TRUE) * 100)) %>%
+    ungroup() %>%
+    pivot_longer(-end, names_to = "name", values_to = "value") %>%
+    mutate(type = type_label)
 }
 
-# Prepare table for facetted plot, "id" indicates which list object results come from, also rename age bin column to "end"
+# ---- 9. Compute abundance-weighted and non-abundance summaries ----
+abund.list <- map(
+  split(eco.species, eco.species$region),
+  ~ prep_ecocode_data(
+    data = .x,
+    end_col = end,
+    value_col = abundance,
+    group_cols = "ecocode",
+    type_label = "Abundance Weighted"
+  )
+)
+
+noabund.list <- map(
+  split(eco.species, eco.species$region),
+  ~ prep_ecocode_data(
+    data = .x %>% distinct(end, taxon, ecocode),
+    end_col = end,
+    value_col = taxon,
+    group_cols = "ecocode",
+    type_label = "No Abundance"
+  )
+)
+
+# ---- 10. Combine and filter by region ----
 eco.abund <-
-  lapply(abund.list, as.data.frame) %>%
-  bind_rows(.id = "id")
+  bind_rows(abund.list, .id = "id") %>% distinct()
 
 eco.noabund <-
-  lapply(noabund.list, as.data.frame) %>%
-  bind_rows(.id = "id")
+  bind_rows(noabund.list, .id = "id") %>% distinct()
 
-# Count of ecocodes per period and region
-count.abu <-
-  eco.abund %>%
-  filter(value > 0) %>%
-  select(id, end, name) %>%
-  group_by(id, end) %>%
-  summarise(count = n_distinct(name)) %>%
-  ungroup() %>%
-  # Remove age bins with less than 5 ecocodes present
-  filter(count > 5) %>%
-  select(id, end)
+# ---- 11. Filter out bins with fewer than 5 ecocodes ----
+filter_bins <- function(df) {
+  valid_bins <- df %>%
+    filter(value > 0) %>%
+    group_by(id, end) %>%
+    summarise(count = n_distinct(name), .groups = "drop") %>%
+    filter(count > 5) %>%
+    select(id, end)
 
-# Join to main dataframes to remove age bins with less than 5 ecocodes present
-eco.abund <-
-  eco.abund %>%
-  inner_join(count.abu, by = c("id", "end"))
+  df %>%
+    inner_join(valid_bins, by = c("id", "end"))
+}
 
-# Count of ecocodes per period and region
-count.noabund <-
-  eco.noabund %>%
-  filter(value > 0) %>%
-  select(id, end, name) %>%
-  group_by(id, end) %>%
-  summarise(count = n_distinct(name)) %>%
-  ungroup() %>%
-  # Remove age bins with less than 5 ecocodes present
-  filter(count > 5) %>%
-  select(id, end)
-
-# Join to main dataframes to remove age bins with less than 5 ecocodes present
+eco.abund  <-
+  filter_bins(eco.abund)
 eco.noabund <-
-  eco.noabund %>%
-  inner_join(count.noabund, by = c("id", "end"))
+  filter_bins(eco.noabund)
 
-#set factor levels for ecocodes
-eco.abund$name <-
-  factor(eco.abund$name, levels = c("Aquatics", "Indicators: Running water", "Indicators: Standing water", "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
-                                    "Carrion", "Ectoparasite", "General synanthropic", "Stored grain pest", "Dung/foul habitats","Pasture/Dung", "Indicators: Dung", "Disturbed/arable",
-                                    "Sandy/dry disturbed/arable", "Heathland & moorland", "Wood and trees", "Indicators: Deciduous", "Indicators: Coniferous", "Dry dead wood",
-                                    "Meadowland"))
+# ---- 12. Define ecocode plotting order ----
+ecocode_levels <- c(
+  "Aquatics", "Indicators: Running water", "Indicators: Standing water",
+  "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
+  "Carrion", "Ectoparasite", "General synanthropic", "Stored grain pest",
+  "Dung/foul habitats", "Pasture/Dung", "Indicators: Dung", "Disturbed/arable",
+  "Sandy/dry disturbed/arable", "Heathland & moorland", "Wood and trees",
+  "Indicators: Deciduous", "Indicators: Coniferous", "Dry dead wood",
+  "Meadowland"
+)
 
-#set factor levels for ecocodes
+# Apply factor levels to ensure consistent stacking order
+eco.abund$name   <-
+  factor(eco.abund$name, levels = ecocode_levels)
 eco.noabund$name <-
-  factor(eco.noabund$name, levels = c("Aquatics", "Indicators: Running water", "Indicators: Standing water", "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
-                                      "Carrion", "Ectoparasite", "General synanthropic", "Stored grain pest", "Dung/foul habitats","Pasture/Dung", "Indicators: Dung", "Disturbed/arable",
-                                      "Sandy/dry disturbed/arable", "Heathland & moorland", "Wood and trees", "Indicators: Deciduous", "Indicators: Coniferous", "Dry dead wood",
-                                      "Meadowland"))
+  factor(eco.noabund$name, levels = ecocode_levels)
 
-habitat <-
-  c("Aquatics", "Indicators: Running water", "Indicators: Standing water", "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
-    "Carrion", "Ectoparasite", "General synanthropic", "Stored grain pest", "Dung/foul habitats","Pasture/Dung", "Indicators: Dung", "Disturbed/arable",
-    "Sandy/dry disturbed/arable", "Heathland & moorland", "Wood and trees", "Indicators: Deciduous", "Indicators: Coniferous", "Dry dead wood",
-    "Meadowland")
-
-
+# ---- 13. Define color palette ----
 colors <-
   c("#197EC0FF", "lightskyblue1", "#71D0F5FF", "#709AE1FF", "dodgerblue4", "#370335FF", "#1A9993FF",
     "#8A9197FF", "darkorchid", "#FD8CC1FF", "#D2AF81FF", "#91331FFF", "#FED439FF", "darkred", "salmon1",
     "tomato3", "#D5E4A2FF", "darkslategrey", "#46732EFF", "green4", "brown4", "yellowgreen")
 
-# Set region factor levels for visualisation
-eco.abund$id <-
-  factor(eco.abund$id, levels = c("5", "3", "1", "2", "4"))
-eco.noabund$id <-
-  factor(eco.noabund$id, levels = c("5", "3", "1", "2", "4"))
+# ---- 14. Shared ggplot settings ----
+plot_base <- list(
+  geom_bar(position = "stack", stat = "identity", alpha = 0.9),
+  guides(fill = guide_legend(nrow = 5, reverse = TRUE)),
+  scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(10)),
+  coord_flip(),
+  facet_grid2(~id, scales = "free", axes = "margins", labeller = labeller(id = label_value)),
+  theme_bw(),
+  theme(
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 12)
+  )
+)
 
-# Labeller for region facets
-region.labs <- c(
-  '1' = "British/Irish Isles",
-  '2' = "Continental",
-  '3' = "Iceland",
-  '4' = "Meridional",
-  '5' = "Scandinavia/Baltic")
+# ---- 15. Plot abundance-weighted ecocodes ----
+fig.abund <- ggplot(eco.abund, aes(fill = name, y = value, x = end)) +
+  geom_bar(position = "stack", stat = "identity", alpha = 0.9) +
+  scale_fill_manual(values = colors, name = "Habitat") +
+  labs(y = "Abundance weighted; %SumRep", x = "Age (BP)") +
+  plot_base[-1]   # exclude geom_bar duplication
 
-# Stacked No abundance, sumrep
-fig.abund <-
-  eco.abund %>%
-  ggplot(aes(fill=name, y=value, x=end)) +
-  geom_bar(position="stack", stat="identity", just = 0, alpha = 0.9) +
-  labs(y="Abundance weighted; %SumRep",
-       x="Age (BP)",
-       color=NULL) +
-  scale_fill_manual(values = colors,
-                    name = "Habitat") +
-  guides(fill = guide_legend(nrow = 5,
-                             reverse = T)) +
-  scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
-  coord_flip() +
-  facet_grid2(~ id, scales = "free", axes = "margins", labeller = labeller(id = region.labs)) +
-  theme_bw() +
-  theme(axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14, face = "bold"),
-        #axis.text.x = element_text(angle = 90),
-        #axis.title.y = element_text(size = 14, face = "bold", colour = "black"),
-        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
-        strip.text.y = element_text(size = 16, face = "bold", colour = "black"),
-        legend.box.margin = margin(0, 0, 0, 0),
-        legend.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.text = element_text(size = 12),
-        legend.position = "bottom")
+# ---- 16. Plot presence-based ecocodes ----
+fig.noabund <- ggplot(eco.noabund, aes(fill = name, y = value, x = end)) +
+  geom_bar(position = "stack", stat = "identity", alpha = 0.9) +
+  scale_fill_manual(values = colors, name = "Habitat") +
+  labs(y = "No Abundance; %SumRep", x = "Age (BP)") +
+  plot_base[-1] # exclude geom_bar duplication
 
-# Stacked No abundance, sumrep
-fig.noabund <-
-  eco.noabund %>%
-  ggplot(aes(fill=name, y=value, x=end)) +
-  geom_bar(position="stack", stat="identity", just = 0, alpha = 0.9) +
-  labs(y="No Abundance; %SumRep",
-       x="Age (BP)",
-       color=NULL) +
-  scale_fill_manual(values = colors,
-                    name = "Habitat") +
-  guides(fill = guide_legend(nrow = 5,
-                             reverse = T)) +
-  scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
-  coord_flip() +
-  facet_grid2(~ id, scales = "free", axes = "margins", labeller = labeller(id = region.labs)) +
-  theme_bw() +
-  theme(axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14, face = "bold"),
-        #axis.text.x = element_text(angle = 90),
-        #axis.title.y = element_text(size = 14, face = "bold", colour = "black"),
-        strip.text.x = element_text(size = 16, face = "bold", colour = "black"),
-        strip.text.y = element_text(size = 16, face = "bold", colour = "black"),
-        legend.box.margin = margin(0, 0, 0, 0),
-        legend.title = element_text(size = 12, face = "bold", colour = "black"),
-        legend.text = element_text(size = 12),
-        legend.position = "bottom")
-
-#Save figure
-ggsave("004-ecocodes-natural-divided-abund-fixed2.jpg",
+# ---- 17. Save plots ----
+ggsave(here::here("analysis", "figures", "004-ecocodes-natural-divided-abund.jpg"),
        fig.abund,
-       device = "jpg",
-       here::here("analysis", "figures"),
        width=50,
        height=30,
-       units = "cm",
-       dpi = 300)
+       units="cm",
+       dpi=300
+)
 
-#Save figure
-ggsave("004-ecocodes-natural-divided-noabund-fixed2.jpg",
+ggsave(here::here("analysis", "figures", "004-ecocodes-natural-divided-noabund.jpg"),
        fig.noabund,
-       device = "jpg",
-       here::here("analysis", "figures"),
        width=50,
        height=30,
-       units = "cm",
-       dpi = 300)
+       units="cm",
+       dpi=300
+)
+
+message("✅ Ecological composition analysis complete and figures saved: '004-ecocodes-natural-divided-abund.jpg'' and '004-ecocodes-natural-divided-noabund.jpg'")
