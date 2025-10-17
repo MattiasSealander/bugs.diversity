@@ -214,36 +214,51 @@ names(Listdf_raw) <- names(Listdf_SRS) <- unique(raw_long$region)
 # 10. Gamma Diversity Calculation and Plotting
 # ==============================================================
 
-generate_gammaDiversity_plots <- function(Listdf_raw, Listdf_SRS, rects,
-                                          output_dir = here::here("analysis", "figures")) {
+generate_gammaDiversity_plots <-
+  function(Listdf_raw, Listdf_SRS, rects,
+           output_dir = here::here("analysis", "figures")) {
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
   plot_list <- list()
   results_list <- list()
 
   for (region_name in names(Listdf_raw)) {
-    region_data_raw <- Listdf_raw[[region_name]]
-    region_data_srs <- Listdf_SRS[[region_name]]
-    region_results <- data.frame(Time = character(), Metric = character(), Value = numeric(), Type = character())
+    region_data_raw <-
+      Listdf_raw[[region_name]]
+    region_data_srs <-
+      Listdf_SRS[[region_name]]
+    region_results <-
+      data.frame(Time = character(), Metric = character(), Value = numeric(), Type = character())
 
     for (dataset_type in c("Raw", "SRS")) {
-      region_data <- if (dataset_type == "Raw") region_data_raw else region_data_srs
+      region_data <-
+        if (dataset_type == "Raw") region_data_raw
+      else region_data_srs
 
       for (time_name in names(region_data)) {
         sublist <- region_data[[time_name]]
-        if (is.null(sublist) || nrow(sublist) == 0) next
+        if (is.null(sublist) || nrow(sublist) == 0)
+          next
 
-        comm_mat <- tryCatch(as.matrix(sublist), error = function(e) NULL)
-        if (is.null(comm_mat) || ncol(comm_mat) == 0) next
+        comm_mat <-
+          tryCatch(as.matrix(sublist), error = function(e) NULL)
+        if (is.null(comm_mat) || ncol(comm_mat) == 0)
+          next
 
-        meta <- tryCatch(entropart::MetaCommunity(Abundances = comm_mat),
+        meta <-
+          tryCatch(entropart::MetaCommunity(Abundances = comm_mat),
                          error = function(e) NULL)
-        if (is.null(meta)) next
+        if (is.null(meta))
+          next
 
-        cov_time <- tryCatch(entropart::Coverage(rowSums(comm_mat)), error = function(e) NA_real_)
-        richness <- tryCatch(entropart::GammaDiversity(meta, q = 0), error = function(e) NA_real_)
-        shannon  <- tryCatch(entropart::GammaDiversity(meta, q = 1), error = function(e) NA_real_)
-        simpson  <- tryCatch(entropart::GammaDiversity(meta, q = 2), error = function(e) NA_real_)
+        cov_time <-
+          tryCatch(entropart::Coverage(rowSums(comm_mat)), error = function(e) NA_real_)
+        richness <-
+          tryCatch(entropart::GammaDiversity(meta, q = 0), error = function(e) NA_real_)
+        shannon  <-
+          tryCatch(entropart::GammaDiversity(meta, q = 1), error = function(e) NA_real_)
+        simpson  <-
+          tryCatch(entropart::GammaDiversity(meta, q = 2), error = function(e) NA_real_)
 
         region_results <- rbind(
           region_results,
