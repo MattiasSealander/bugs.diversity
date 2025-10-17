@@ -1,19 +1,21 @@
 # ==============================================================
 # Description:
-#   Computes alpha diversity metrics (Observed Richness, Shannon,
-#   Inverse Simpson, and Coverage) for Holocene fossil insect data
+#   This script computes alpha diversity metrics (Observed Richness,
+#   Shannon, Inverse Simpson, and Coverage) for Holocene fossil insect data
 #   from the British/Irish Isles region.
 #
-#   The workflow:
-#     1. Filters fossil insect occurrence data to the British/Irish Isles.
-#     2. Bins samples into 500-year intervals (16 ka – present).
-#     3. Builds sample × taxon abundance matrices for each time bin.
-#     4. Computes alpha diversity metrics using entropart.
-#     5. Produces time-series plots for diversity metrics.
+# Workflow overview:
+#   1. Load and clean fossil insect occurrence data.
+#   2. Define 500-year temporal bins (16 ka – present).
+#   3. Assign each sample to one or more bins based on its dated range.
+#   4. Construct community (taxon × sample) matrices per time bin.
+#   5. Compute alpha diversity metrics using entropart.
+#   6. Produce time-series plots for each metric.
 #
-# Output:
-#   - Listdf2: list of time-bin-specific community matrices.
-#   - Alpha diversity plots and tables saved in analysis/figures/.
+# Outputs:
+#   - `Listdf2`: list of taxon × sample matrices per 500-year time bin.
+#   - Figure: "003-alpha-diversity-Britain.jpg"
+#     (saved in ./analysis/figures)
 # ==============================================================
 
 
@@ -25,6 +27,8 @@ pacman::p_load(
 
 
 # ---- 1. Import species occurrence data ----
+# Load fossil insect dataset (CSV format).
+# The file includes metadata such as site, sample age, and taxon abundance.
 bugs <- fread(
   here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
@@ -32,7 +36,8 @@ bugs <- fread(
 )
 
 
-# ---- 2. Define temporal periods (Pilotto et al. 2022) ----
+# ---- 2. Define temporal periods (after Pilotto et al. 2022) ----
+# Used to color-code time intervals on plots.
 rects <- data.frame(
   ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
   yend   = c(16000, 12000, 9500, 8000, 6500, 4500, 4000, 3500),
@@ -43,7 +48,8 @@ rects <- data.frame(
 )
 
 
-# ---- 3. Prepare data for temporal binning ----
+# ---- 3. Prepare sample metadata for temporal binning ----
+# Filter samples to retain only samples from natural contexts (Stratigraphic sequence) within the Late Glacial - Holocene window.
 time.mat <- bugs %>%
   select(country, sample, site, sample_group, age_older, age_younger, context) %>%
   mutate(age_range = age_older - age_younger) %>%
@@ -60,17 +66,18 @@ time.mat <- bugs %>%
   mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
   column_to_rownames("sample") %>%
   select(-country, -site, -sample_group) %>%
-  dplyr::rename(start = age_younger, end = age_older)
+  rename(start = age_younger, end = age_older)
 
 
-# ---- 4. Define 500-year age bins ----
+# ---- 4. Define 500-year temporal bins ----
 range <- data.frame(
   start = c(-500, seq(1, 15501, by = 500)),
-  end = seq(0, 16000, by = 500)
+  end   = seq(0, 16000, by = 500)
 )
 
 
-# ---- 5. Identify overlapping samples with each time bin ----
+# ---- 5. Identify sample–bin overlaps ----
+# Samples overlapping each time bin are assigned accordingly.
 intersection <- findOverlaps(
   query = do.call(IRanges, time.mat),
   subject = do.call(IRanges, range),
@@ -78,15 +85,19 @@ intersection <- findOverlaps(
 )
 
 
-# ---- 6. Merge sample and bin information ----
-hits <- data.frame(time.mat[queryHits(intersection),], range[subjectHits(intersection),]) %>%
+# ---- 6. Merge sample–bin relationships ----
+hits <- data.frame(
+  time.mat[queryHits(intersection),],
+  range[subjectHits(intersection),]
+) %>%
   as_tibble(rownames = "sample") %>%
   separate(sample, into = c("sample", "sample_group", "site"), sep = "@") %>%
   inner_join(bugs, by = c("sample", "sample_group")) %>%
   select(-start, -end)
 
 
-# ---- 7. Construct raw species abundance matrix and assign region ----
+# ---- 7. Construct raw species abundance data and assign regions ----
+# Define regions based on lat/lon; focus only on the British/Irish Isles.
 raw.mat <- hits %>%
   select(site.x, latitude, longitude, sample_group, sample, end.1, taxon, abundance) %>%
   distinct() %>%
@@ -100,13 +111,12 @@ raw.mat <- hits %>%
     ),
     region = ifelse(is.na(place), "Continental", place)
   ) %>%
-  filter(region == "British/Irish Isles") %>%  # ✅ Focus only on this region
+  filter(region == "British/Irish Isles") %>%  # Focus analysis on this region
   select(-place, -latitude, -longitude)
 
 
-# ---- 8. Build time-binned community matrices for the British/Irish Isles ----
-# Output structure: Listdf2[[time_bin]] → taxon × sample abundance matrix
-
+# ---- 8. Build community matrices (one per time bin) ----
+# Each matrix: rows = taxa, columns = samples.
 Listdf2 <- raw.mat %>%
   group_by(end.1) %>%
   group_split() %>%
@@ -114,13 +124,15 @@ Listdf2 <- raw.mat %>%
   map(~ {
     df <- .x %>%
       select(taxon, sample, abundance) %>%
-      distinct() %>%
+      distinct() %>%  # Keep unique taxon–sample pairs, avoid summing duplicates
       pivot_wider(names_from = sample, values_from = abundance, values_fill = 0)
     if ("taxon" %in% names(df)) column_to_rownames(df, "taxon") else df
   })
 
 
 # ---- 9. Helper functions ----
+
+# Check if all numeric values are zero or NA.
 is_all_zero_numeric_df <- function(df) {
   num_data <- df[sapply(df, is.numeric)]
   if (ncol(num_data) == 0) return(TRUE)
@@ -130,6 +142,7 @@ is_all_zero_numeric_df <- function(df) {
   all(num_vals == 0)
 }
 
+# Remove samples (columns) that contain no taxa.
 clean_df_remove_empty_communities <- function(df) {
   numeric_cols <- sapply(df, is.numeric)
   numeric_data <- df[, numeric_cols, drop = FALSE]
@@ -145,14 +158,17 @@ clean_df_remove_empty_communities <- function(df) {
 }
 
 
-# ---- 10. Clean and filter time-bin matrices ----
+# ---- 10. Clean and filter community matrices ----
 Listdf2 <- Listdf2 %>%
   discard(is_all_zero_numeric_df) %>%
   map(clean_df_remove_empty_communities) %>%
   discard(is.null)
 
 
-# ---- 11. Compute and plot alpha diversity (single region) ----
+# ---- 11. Compute and visualize alpha diversity metrics ----
+# Computes Observed Richness, Coverage, Shannon, and Inverse Simpson per bin.
+# Returns a list with a results table and ggplot object.
+
 generate_alphaDiversity_plots_BI <- function(Listdf2, rects,
                                              output_dir = here::here("analysis", "figures")) {
 
@@ -165,9 +181,10 @@ generate_alphaDiversity_plots_BI <- function(Listdf2, rects,
     comm_data <- as.matrix(sublist)
     if (ncol(comm_data) == 0) next
 
+    # Compute alpha diversity metrics
     obs_rich <- tryCatch(sum(rowSums(comm_data) > 0), error = function(e) NA)
-    cov <- tryCatch(entropart::Coverage(comm_data), error = function(e) NA)
-    MC <- tryCatch(entropart::MetaCommunity(Abundances = comm_data), error = function(e) NULL)
+    cov       <- tryCatch(entropart::Coverage(comm_data), error = function(e) NA)
+    MC        <- tryCatch(entropart::MetaCommunity(Abundances = comm_data), error = function(e) NULL)
 
     shannon_div <- if (!is.null(MC)) tryCatch(
       as.numeric(entropart::AlphaDiversity(MC, q = 1, Correction = "Best")$Total),
@@ -179,9 +196,10 @@ generate_alphaDiversity_plots_BI <- function(Listdf2, rects,
       error = function(e) NA
     ) else NA
 
+    # Append to results
     add_metric <- function(name, value) {
       if (!is.na(value))
-        region_results <<- dplyr::bind_rows(
+        region_results <<- bind_rows(
           region_results,
           data.frame(Time = time_name, Metric = name, Value = value)
         )
@@ -193,10 +211,12 @@ generate_alphaDiversity_plots_BI <- function(Listdf2, rects,
     add_metric("Inverse Simpson", simpson_div)
   }
 
-  # ---- Plot results ----
+  # ---- Plotting ----
   region_results$TimeNumeric <- suppressWarnings(as.numeric(region_results$Time))
-  region_results$Metric <- factor(region_results$Metric,
-                                  levels = c("Coverage", "Observed Richness", "Shannon", "Inverse Simpson"))
+  region_results$Metric <- factor(
+    region_results$Metric,
+    levels = c("Coverage", "Observed Richness", "Shannon", "Inverse Simpson")
+  )
 
   plot_min <- min(region_results$TimeNumeric, na.rm = TRUE) - 500
   plot_max <- max(region_results$TimeNumeric, na.rm = TRUE) + 500
@@ -216,7 +236,8 @@ generate_alphaDiversity_plots_BI <- function(Listdf2, rects,
     scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
     scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
     labs(
-      title = "Alpha diversity metrics – British/Irish Isles",
+      title = "Alpha Diversity Metrics – British/Irish Isles",
+      subtitle = "Raw abundance data (500-year bins)",
       x = "Diversity Value", y = "Time (Years BP)", fill = "Time Periods"
     ) +
     coord_cartesian(ylim = c(plot_max, plot_min)) +
