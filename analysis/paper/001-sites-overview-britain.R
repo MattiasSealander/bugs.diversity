@@ -107,8 +107,8 @@ plot.1 <- ggplot() +
     data = sites.all.sf,
     aes(size = point_size),
     shape = 21,
-    fill = "green4",
-    color = "black",
+    fill = "black",
+    color = "white",
     alpha = 0.9,
     show.legend = c(fill = TRUE)
   ) +
@@ -132,7 +132,7 @@ plot.2 <- ggplot() +
     data = sites.gb.sf,
     aes(size = 4),
     shape = 21,
-    color = "black",
+    color = "white",
     fill = "green4",
     alpha = 0.8
   ) +
@@ -159,7 +159,7 @@ fig <-
 
 # ---- 8. Save figure ----
 ggsave(
-  "001-sites-overview.jpg",
+  "001-sites-overview-britain.jpg",
   fig,
   device = "jpg",
   path = here("analysis", "figures"),
@@ -169,4 +169,4 @@ ggsave(
   dpi = 300
 )
 
-message("✅ Sites have been plotted and figure saved: '001-sites-overview.jpg'")
+message("✅ Sites have been plotted and figure saved: '001-sites-overview.-britain.jpg'")
