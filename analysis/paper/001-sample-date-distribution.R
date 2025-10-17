@@ -11,7 +11,12 @@
 # ---- Load packages ----
 pacman::p_load(tidyverse, IRanges, cowplot, here, data.table)
 
-# ---- 1. Import site and species data ----
+
+# ==============================================================
+# 1. Import species occurrence data
+# --------------------------------------------------------------
+# The raw dataset includes sample-level fossil insect occurrences across Europe from SEAD.
+# ==============================================================
 bugs <- fread(
   here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
