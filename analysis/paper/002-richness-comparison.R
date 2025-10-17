@@ -3,7 +3,7 @@
 #   Compare three richness estimates by 500-year time bins:
 #   - Raw richness (unadjusted)
 #   - Rarefied richness (sample-size standardized, Cmin = 10)
-#   - SRS standardized richness (Standardized Random Sampling, Cmin = 10)
+#   - SRS standardized richness (Scaling with Ranked Subsampling, Cmin = 10)
 #
 # Description:
 #   The script processes subfossil beetle data from Europe,
@@ -28,15 +28,18 @@ age_max <- 16000
 bin_width <- 500
 
 # ---- 2. Import data ----
-bugs.csv <- fread(
+bugs <- fread(
   here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"), na.strings = c("", "NA", "NULL"), encoding = "UTF-8"
 )
 
 # ---- 3. Filter relevant records ----
 # Keep only stratigraphic, non-Greenland samples with valid ages and narrow ranges
-bugs <- bugs.csv %>%
-  mutate(age_range = age_older - age_younger) %>%
+bugs_eu <- bugs %>%
+  mutate(age_range = age_older - age_younger,
+         region = case_when(
+           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles")) %>%
   filter(
+    region == "British/Irish Isles",
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
     between(age_older, age_min, age_max),
@@ -48,7 +51,7 @@ bugs <- bugs.csv %>%
 
 # ---- 4. Create unique sample identifiers ----
 # Combine 'sample', 'sample_group', and 'site' to ensure uniqueness
-sample_meta <- bugs %>%
+sample_meta <- bugs_eu %>%
   distinct(sample, sample_group, site, .keep_all = TRUE) %>%
   transmute(
     sample_id = paste(sample, sample_group, site, sep = "@"),
@@ -231,13 +234,13 @@ fig <- ggplot() +
   )
 
 # ---- 15. Save figure ----
-ggsave("002-richness-comparison.jpg",
+ggsave("002-richness-comparison-britain.jpg",
        fig,
        device = "jpg",
        here::here("analysis", "figures"),
-       width=1800,
-       height=2600,
-       units = "px",
+       width=20,
+       height=30,
+       units = "cm",
        dpi = 300)
 
-message("✅ Species richness comparison completed and figure saved: 002-richness-comparison.jpg")
+message("✅ Species richness comparison completed and figure saved: 002-richness-comparison-britain.jpg")
