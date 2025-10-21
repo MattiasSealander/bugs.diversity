@@ -126,17 +126,26 @@ plot.1 <- ggplot() +
 # 7b. Plot the study area sites (inset map)
 plot.2 <- ggplot() +
   # Plot countries
-  geom_sf(data = countries.gb.sf, fill = "grey70", linewidth = 0.8, col = "black", alpha = 0.2) +
+  geom_sf(
+    data = countries.gb.sf,
+    fill = "grey70",
+    linewidth = 0.8,
+    col = "black",
+    alpha = 0.2
+  ) +
   # Plot all sites with fill by region and variable point size
   geom_sf(
     data = sites.gb.sf,
-    aes(size = 4),
+    aes(size = 6, fill = age_younger),
     shape = 21,
     color = "white",
-    fill = "green4",
-    alpha = 0.8
+    alpha = 0.8,
+    lwd = 3
   ) +
   scale_size_identity() + # Use actual point sizes for the plot
+  scale_fill_gradient(
+    name = "Time (Years BP)",
+    low = "lightgreen", high = "darkgreen") +
   coord_sf(datum = NA, clip = "on", expand = FALSE) +
   theme_minimal() +
   theme(
@@ -144,10 +153,35 @@ plot.2 <- ggplot() +
     axis.title.y = element_blank(),
     plot.margin = margin(t = 0, r = 0, b = 0, l = 0),
     panel.grid.major = element_blank(),
-    panel.border = element_rect(colour = "black", fill=NA, linewidth=1)
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+    legend.position = "none",
   )
 
-# 7c. Draw the study area as an inset map on the European distribution map
+# ---- 7c. Generate legend plot ----
+legend_plot <- ggplot() +
+  geom_sf(
+    data = sites.gb.sf,
+    aes(fill = age_younger),
+    shape = 21,
+    color = "white",
+    alpha = 0.8,
+    lwd = 3
+  ) +
+  scale_fill_gradient(
+    name = "Time (Years BP)",
+    low = "lightgreen", high = "darkgreen") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10),
+    legend.key.width = unit(0.10, 'npc')
+  )
+
+# Extract the legend
+legend <- get_legend(legend_plot)
+
+# 7d. Draw the study area as an inset map on the European distribution map
 fig <-
   ggdraw(plot.1) +
   draw_plot({plot.2},
@@ -156,11 +190,19 @@ fig <-
     width = 0.46,
     height = 0.46)
 
+# Add legend at the bottom
+fig_with_legend <- plot_grid(
+  fig,
+  legend,
+  ncol = 1,
+  rel_heights = c(1, 0.05)
+)
+
 
 # ---- 8. Save figure ----
 ggsave(
   "001-sites-overview-britain.jpg",
-  fig,
+  fig_with_legend,
   device = "jpg",
   path = here("analysis", "figures"),
   width=40,
@@ -169,4 +211,4 @@ ggsave(
   dpi = 300
 )
 
-message("✅ Sites have been plotted and figure saved: '001-sites-overview.-britain.jpg'")
+message("✅ Sites have been plotted and figure saved: '001-sites-overview-britain.jpg'")
