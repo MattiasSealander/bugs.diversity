@@ -211,8 +211,10 @@ generate_alphaDiversity_raw <- function(Listdf, rects,
     Weights <- Weights / sum(Weights)
     MC <- tryCatch(entropart::MetaCommunity(as.matrix(comm_num), Weights), error = function(e) NULL)
 
-    shannon_div <- simpson_div <- NA
+    shannon_div <- simpson_div <- richness_div <- NA
     if (!is.null(MC)) {
+      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "None")$Total,
+                              error = function(e) NA)
       shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "Best")$Total,
                               error = function(e) NA)
       simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "Best")$Total,
@@ -226,6 +228,7 @@ generate_alphaDiversity_raw <- function(Listdf, rects,
                           data.frame(Time = time_name, Metric = name, Value = value))
       }
     }
+    add_metric("Richness", richness_div)
     add_metric("Shannon", shannon_div)
     add_metric("Inverse Simpson", simpson_div)
   }
@@ -238,7 +241,7 @@ generate_alphaDiversity_raw <- function(Listdf, rects,
   # ---- Prepare for plotting ----
   results$TimeNumeric <- suppressWarnings(as.numeric(results$Time))
   results$Metric <- factor(results$Metric,
-                           levels = c("Shannon", "Inverse Simpson"))
+                           levels = c("Richness", "Shannon", "Inverse Simpson"))
 
   plot_min <- min(results$TimeNumeric, na.rm = TRUE) - 500
   plot_max <- max(results$TimeNumeric, na.rm = TRUE) + 500

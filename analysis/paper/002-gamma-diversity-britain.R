@@ -253,8 +253,8 @@ generate_gammaDiversity_plots <-
 
         #cov_time <-
         #  tryCatch(entropart::Coverage(rowSums(comm_mat)), error = function(e) NA_real_)
-        #richness <-
-        #  tryCatch(entropart::GammaDiversity(meta, q = 0), error = function(e) NA_real_)
+        richness <-
+          tryCatch(entropart::GammaDiversity(meta, q = 0), error = function(e) NA_real_)
         shannon  <-
           tryCatch(entropart::GammaDiversity(meta, q = 1), error = function(e) NA_real_)
         simpson  <-
@@ -263,7 +263,7 @@ generate_gammaDiversity_plots <-
         region_results <- rbind(
           region_results,
           #data.frame(Time = time_name, Metric = "Coverage", Value = cov_time, Type = dataset_type),
-          #data.frame(Time = time_name, Metric = "Richness", Value = richness, Type = dataset_type),
+          data.frame(Time = time_name, Metric = "Richness", Value = richness, Type = dataset_type),
           data.frame(Time = time_name, Metric = "Shannon", Value = shannon, Type = dataset_type),
           data.frame(Time = time_name, Metric = "Inverse Simpson", Value = simpson, Type = dataset_type)
         )
@@ -273,7 +273,7 @@ generate_gammaDiversity_plots <-
     region_results$TimeNumeric <- suppressWarnings(as.numeric(region_results$Time))
     region_results <- region_results[!is.na(region_results$TimeNumeric), ]
     region_results$Metric <- factor(region_results$Metric,
-                                    levels = c("Shannon", "Inverse Simpson"))
+                                    levels = c("Richness", "Shannon", "Inverse Simpson"))
 
     # Keep the same aesthetics as before
     plot_min <- min(region_results$TimeNumeric)
@@ -320,7 +320,7 @@ generate_gammaDiversity_plots <-
       )
 
     safe_name <- gsub("[^A-Za-z0-9_]", "_", region_name)
-    ggsave(filename = paste0("004-gamma-diversity-Raw_vs_SRS-", safe_name, ".jpg"),
+    ggsave(filename = paste0("004-gamma-diversity-raw-srs-", safe_name, ".jpg"),
            plot = p, path = output_dir, width = 3300, height = 4200, units = "px", dpi = 300)
 
     plot_list[[region_name]] <- p

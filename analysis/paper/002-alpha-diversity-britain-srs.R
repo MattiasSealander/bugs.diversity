@@ -206,39 +206,6 @@ message("✅ Listdf constructed for ", region_name_focus,
 
 
 # ==============================================================
-# Function: prepare_for_MetaCommunity
-# ==============================================================
-# Prepares a taxon × sample abundance matrix for use with entropart package.
-# Ensures numeric-only data, removes empty taxa/samples,
-# and constructs a MetaCommunity object safely.
-# ==============================================================
-
-prepare_for_MetaCommunity <- function(df, verbose = FALSE) {
-  if ("taxon" %in% names(df)) df <- tibble::column_to_rownames(df, "taxon")
-  df_num <- suppressWarnings(as.data.frame(lapply(df, as.numeric)))
-  df_num[is.na(df_num)] <- 0
-
-  df_num <- df_num[rowSums(df_num) > 0, , drop = FALSE]
-  df_num <- df_num[, colSums(df_num) > 0, drop = FALSE]
-
-  if (nrow(df_num) < 2 || ncol(df_num) < 2) return(NULL)
-
-  Abundances <- as.matrix(df_num)
-  Weights <- colSums(Abundances)
-  if (sum(Weights) == 0) return(NULL)
-  Weights <- Weights / sum(Weights)
-
-  tryCatch(
-    entropart::MetaCommunity(Abundances, Weights),
-    error = function(e) {
-      if (verbose) message("⚠️ MetaCommunity failed: ", e$message)
-      NULL
-    }
-  )
-}
-
-
-# ==============================================================
 # Function: generate_alphaDiversity_srs
 # ==============================================================
 # Description:
@@ -288,8 +255,10 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
     Weights <- Weights / sum(Weights)
     MC <- tryCatch(entropart::MetaCommunity(as.matrix(comm_num), Weights), error = function(e) NULL)
 
-    shannon_div <- simpson_div <- NA
+    shannon_div <- simpson_div <- richness_div <- NA
     if (!is.null(MC)) {
+      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "Best")$Total,
+                                error = function(e) NA)
       shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "Best")$Total,
                               error = function(e) NA)
       simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "Best")$Total,
@@ -303,6 +272,7 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
                           data.frame(Time = time_name, Metric = name, Value = value))
       }
     }
+    add_metric("Richness", richness_div)
     add_metric("Shannon", shannon_div)
     add_metric("Inverse Simpson", simpson_div)
   }
@@ -315,7 +285,7 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
   # ---- Prepare for plotting ----
   results$TimeNumeric <- suppressWarnings(as.numeric(results$Time))
   results$Metric <- factor(results$Metric,
-                           levels = c("Shannon", "Inverse Simpson"))
+                           levels = c("Richness", "Shannon", "Inverse Simpson"))
 
   plot_min <- min(results$TimeNumeric, na.rm = TRUE) - 500
   plot_max <- max(results$TimeNumeric, na.rm = TRUE) + 500
