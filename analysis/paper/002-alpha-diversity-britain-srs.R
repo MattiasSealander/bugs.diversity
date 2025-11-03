@@ -209,8 +209,8 @@ message("✅ Listdf constructed for ", region_name_focus,
 # Function: generate_alphaDiversity_srs
 # ==============================================================
 # Description:
-#   Computes alpha diversity metrics (Observed Richness, Coverage,
-#   Shannon, Inverse Simpson) for SRS-scaled abundance data.
+#   Computes alpha diversity metrics (Estimated Richness, Shannon entropy,
+#   Inverse Simpson entropy) for SRS-scaled abundance data.
 #
 # Arguments:
 #   Listdf: list of taxon × sample matrices per time slice
@@ -257,11 +257,11 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
 
     shannon_div <- simpson_div <- richness_div <- NA
     if (!is.null(MC)) {
-      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "Best")$Total,
+      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "UnveilJ")$Total,
                                 error = function(e) NA)
-      shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "Best")$Total,
+      shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "UnveilJ")$Total,
                               error = function(e) NA)
-      simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "Best")$Total,
+      simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "UnveilJ")$Total,
                               error = function(e) NA)
     }
 
@@ -272,7 +272,7 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
                           data.frame(Time = time_name, Metric = name, Value = value))
       }
     }
-    add_metric("Richness", richness_div)
+    add_metric("Estimated Richness", richness_div)
     add_metric("Shannon", shannon_div)
     add_metric("Inverse Simpson", simpson_div)
   }
