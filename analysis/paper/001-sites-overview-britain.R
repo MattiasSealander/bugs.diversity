@@ -87,7 +87,7 @@ sf_use_s2(TRUE)
 # Smaller size for dense British/Irish Isles points
 # Add a size column based on region
 sites.all.sf <- bind_rows(sites.sf, sites.gb.sf) %>%
-  mutate(point_size = ifelse(region == "British/Irish Isles", 2, 5))
+  mutate(point_size = ifelse(region == "British/Irish Isles", 3, 5))
 
 
 # ---- 7. Plot the figure ----
@@ -105,21 +105,24 @@ plot.1 <- ggplot() +
   # Plot all sites with fill by region and variable point size
   geom_sf(
     data = sites.all.sf,
-    aes(size = point_size),
+    aes(size = point_size, fill = age_younger),
     shape = 21,
-    fill = "black",
     color = "white",
     alpha = 0.9,
     show.legend = c(fill = TRUE)
   ) +
   scale_size_identity() + # Use actual point sizes for the plot
+  scale_fill_viridis(
+    name = "Time (Years BP)",
+    direction = -1
+  ) +
   coord_sf(datum = st_crs(4326), label_graticule = "NW", clip = "on") +
   theme_minimal() +
   theme(
     axis.title.x = element_text(size = 14, face = "bold", colour = "black"),
     axis.title.y = element_text(size = 14, face = "bold", colour = "black"),
     legend.text = element_text(size = 8, colour = "black"),
-    legend.position = "bottom",
+    legend.position = "none",
     plot.margin = margin(t = 0, r = 0, b = 0, l = 0)
   )
 
@@ -143,11 +146,12 @@ plot.2 <- ggplot() +
     lwd = 3
   ) +
   scale_size_identity() + # Use actual point sizes for the plot
-  scale_fill_gradient(
+  scale_fill_viridis(
     name = "Time (Years BP)",
-    low = "lightgreen", high = "darkgreen") +
+    direction = -1
+  ) +
   coord_sf(datum = NA, clip = "on", expand = FALSE) +
-  theme_minimal() +
+  theme_bw() +
   theme(
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
@@ -167,9 +171,10 @@ legend_plot <- ggplot() +
     alpha = 0.8,
     lwd = 3
   ) +
-  scale_fill_gradient(
+  scale_fill_viridis(
     name = "Time (Years BP)",
-    low = "lightgreen", high = "darkgreen") +
+    direction = -1
+  ) +
   theme_minimal() +
   theme(
     legend.position = "bottom",

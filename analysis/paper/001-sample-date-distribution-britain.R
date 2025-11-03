@@ -307,7 +307,10 @@ fig_time <-
   geom_segment(aes(x = age_older, xend = age_younger, y = sample_row, yend = sample_row, color = age_older),
                linewidth = 3) +
   scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
-  scale_color_gradient(low = "lightgreen", high = "darkgreen") +
+  scale_color_viridis(
+    name = "Time (Years BP)",
+    direction = -1
+  ) +
   labs(
     x = "Time (Years BP)",
     y = "Sample"
