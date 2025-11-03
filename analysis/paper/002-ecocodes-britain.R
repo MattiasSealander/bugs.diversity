@@ -60,7 +60,7 @@ age_bins <- tibble(
 )
 
 # ---- 5. Compute sample–bin overlaps ----
-ir_samples <- IRanges(start = time.mat$start, end = time.mat$end)
+ir_samples <- IRanges(start = time_mat$start, end = time_mat$end)
 ir_bins    <- IRanges(start = age_bins$start, end = age_bins$end)
 ov <- findOverlaps(ir_samples, ir_bins, type = "any")
 
@@ -84,35 +84,62 @@ eco.species <- eco %>%
   distinct()
 
 # ---- 8. Helper function: Prepare ecocode data ----
-prep_ecocode_data <- function(data, end_col, value_col, type_label) {
-  data %>%
-    select(end = {{ end_col }}, ecocode, value = {{ value_col }}) %>%
+# Implements Buckland (2007) %-standardization methods from BugsCEP
+# 1B: No abundance; %SumRep
+# 2B: Abundance-weighted; %SumRep
+calc_sumrep_buckland <- function(data, end_col, ecocode_col, value_col,
+                                 method = c("presence", "abundance")) {
+
+  method <- match.arg(method)  # ensure method is correct
+
+  # Standardize column references
+  data <- data %>%
+    dplyr::select(end = {{ end_col }},
+                  ecocode = {{ ecocode_col }},
+                  value = {{ value_col }})
+
+  # Summarize per ecocode per bin based on method
+  # Buckland (2007) 1B = presence; Buckland (2007) 2B = abundance weighed
+  ecocode_bin <- data %>%
+    group_by(end, ecocode) %>%
+    summarise(
+      rep = if (method == "presence") length(unique(value)) else sum(value),
+      .groups = "drop"
+    )
+
+  # Convert to %SumRep within each bin (Buckland (2007) %-standardization)
+  sumrep <- ecocode_bin %>%
     group_by(end) %>%
-    pivot_wider(
-      names_from = ecocode,
-      values_from = value,
-      values_fn = function(x) if(type_label == "No Abundance") length(x) else sum(x),
-      values_fill = 0
-    ) %>%
+    mutate(percent = rep / sum(rep) * 100) %>%
     ungroup() %>%
-    rowwise() %>%
-    mutate(across(-end, ~ .x / sum(c_across(-end), na.rm = TRUE) * 100)) %>%
-    ungroup() %>%
-    pivot_longer(-end, names_to = "ecocode", values_to = "value") %>%
-    mutate(type = type_label)
+    dplyr::select(end, ecocode, percent) %>%
+    mutate(method = method)
+
+  return(sumrep)
 }
 
 # ---- 9. Compute abundance-weighted and presence-based summaries ----
-eco.abund   <- prep_ecocode_data(eco.species, end_col = end, value_col = abundance, type_label = "Abundance Weighted")
-eco.noabund <- prep_ecocode_data(
-  eco.species %>% distinct(end, taxon, ecocode),
-  end_col = end, value_col = taxon, type_label = "No Abundance"
+# Presence only standardization
+eco_noabund <- calc_sumrep_buckland(
+  data = eco_species %>% distinct(end, ecocode, taxon),
+  end_col = end,
+  ecocode_col = ecocode,
+  value_col = taxon,
+  method = "presence"
+)
+# Abundance weighted standardization
+eco_abund <- calc_sumrep_buckland(
+  data = eco_species,
+  end_col = end,
+  ecocode_col = ecocode,
+  value_col = abundance,
+  method = "abundance"
 )
 
 # ---- 10. Filter out bins with fewer than 5 ecocodes ----
 filter_bins <- function(df) {
   valid_bins <- df %>%
-    filter(value > 0) %>%
+    filter(percent > 0) %>%
     group_by(end) %>%
     summarise(count = n_distinct(ecocode), .groups = "drop") %>%
     filter(count > 5) %>%
@@ -121,12 +148,14 @@ filter_bins <- function(df) {
   df %>% inner_join(valid_bins, by = "end")
 }
 
-eco.abund   <- filter_bins(eco.abund)
-eco.noabund <- filter_bins(eco.noabund)
+eco_abund   <- filter_bins(eco_abund)
+eco_noabund <- filter_bins(eco_noabund)
 
 # ---- 11. Combine abundance and presence-based data ----
-eco_combined <- bind_rows(eco.abund, eco.noabund)
-eco_combined$type <- factor(eco_combined$type, levels = c("Abundance Weighted", "No Abundance"))
+# Combine the two datasets for plotting and add type labels
+eco_combined <- bind_rows(eco_noabund, eco_abund)
+eco_combined$type <- factor(eco_combined$method, levels = c("abundance", "presence"),
+                            labels = c("Abundance Weighted", "No Abundance"))
 
 # ---- 12. Define ecocode order and colors ----
 ecocode_levels <- c(
@@ -148,7 +177,7 @@ colors <- c(
 eco_combined$ecocode <- factor(eco_combined$ecocode, levels = ecocode_levels)
 
 # ---- 13. Generate combined horizontal figure ----
-fig <- ggplot(eco_combined, aes(x = end, y = value, fill = ecocode)) +
+fig <- ggplot(eco_combined, aes(x = end, y = percent, fill = ecocode)) +
   geom_bar(
     stat = "identity",
     position = "stack",
