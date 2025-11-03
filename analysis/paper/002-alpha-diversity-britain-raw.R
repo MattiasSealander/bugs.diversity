@@ -164,8 +164,8 @@ prepare_for_MetaCommunity <- function(df, verbose = FALSE) {
 # Function: generate_alphaDiversity_raw
 # ==============================================================
 # Description:
-#   Computes alpha diversity metrics (Shannon, Inverse Simpson)
-#   for raw abundance data.
+#   Computes alpha diversity metrics (Estimated Richness, Shannon entropy,
+#   Inverse Simpson entropy) for raw abundance data.
 #
 # Arguments:
 #   Listdf: list of taxon × sample matrices per time slice
@@ -213,11 +213,11 @@ generate_alphaDiversity_raw <- function(Listdf, rects,
 
     shannon_div <- simpson_div <- richness_div <- NA
     if (!is.null(MC)) {
-      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "None")$Total,
+      richness_div <- tryCatch(entropart::AlphaDiversity(MC, q = 0, Correction = "UnveilJ")$Total,
                               error = function(e) NA)
-      shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "Best")$Total,
+      shannon_div <- tryCatch(entropart::AlphaDiversity(MC, q = 1, Correction = "UnveilJ")$Total,
                               error = function(e) NA)
-      simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "Best")$Total,
+      simpson_div <- tryCatch(entropart::AlphaDiversity(MC, q = 2, Correction = "UnveilJ")$Total,
                               error = function(e) NA)
     }
 
