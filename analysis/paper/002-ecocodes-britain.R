@@ -15,22 +15,22 @@ pacman::p_load(
   data.table, ggh4x, IRanges, tidyverse, here
 )
 
-# ---- 1. Import site and species data ----
+# ---- 1. Import site and taxon data ----
 bugs <- fread(
-  here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"),
+  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
   encoding = "UTF-8"
 )
 
-# ---- 2. Import ecocodes ----
+# ---- 2. Import taxa habitat reference data ----
 eco <- fread(
-  here::here("analysis/data/raw_data/sead_ecocodes_20250114.csv"),
+  here::here("analysis", "data", "raw_data", "sead_ecocodes_20250114.csv"),
   na.strings = c("", "NA", "NULL"),
   encoding = "UTF-8"
 )
 
 # ---- 3. Filter and prepare sample metadata ----
-time.mat <- bugs %>%
+time_mat <- bugs %>%
   mutate(age_range = age_older - age_younger,
          region =
            case_when(
@@ -74,7 +74,7 @@ hits <- tibble(
   inner_join(bugs, by = c("sample", "sample_group"), relationship = "many-to-many")
 
 # ---- 7. Merge ecocode classifications ----
-eco.species <- eco %>%
+eco_species <- eco %>%
   filter(ecocode_system == "Bugs") %>%
   inner_join(hits, by = "taxon") %>%
   transmute(
