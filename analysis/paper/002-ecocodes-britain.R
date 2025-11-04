@@ -12,7 +12,7 @@
 
 # ---- Load packages ----
 pacman::p_load(
-  data.table, ggh4x, IRanges, tidyverse, here
+  data.table, ggh4x, IRanges, purrr, tidyverse, here
 )
 
 # ---- 1. Import site and taxon data ----
@@ -66,7 +66,7 @@ ov <- findOverlaps(ir_samples, ir_bins, type = "any")
 
 # ---- 6. Build table linking samples to bins ----
 hits <- tibble(
-  sample_id   = time.mat$sample_id[queryHits(ov)],
+  sample_id   = time_mat$sample_id[queryHits(ov)],
   bin_start   = age_bins$start[subjectHits(ov)],
   bin_end     = age_bins$end[subjectHits(ov)]
 ) %>%
@@ -83,81 +83,110 @@ eco_species <- eco %>%
   ) %>%
   distinct()
 
-# ---- 8. Helper function: Prepare ecocode data ----
-# Implements Buckland (2007) %-standardization methods from BugsCEP
-# 1B: No abundance; %SumRep
-# 2B: Abundance-weighted; %SumRep
-calc_sumrep_buckland <- function(data, end_col, ecocode_col, value_col,
-                                 method = c("presence", "abundance")) {
+# ---- 8. Helper function: Calculate ecocode reconstruction ----
 
-  method <- match.arg(method)  # ensure method is correct
+# Calculate Buckland (2007) diversity measures for ecocode-based habitat reconstructions
+#
+# This function computes the four ecological diversity measures described by
+# Buckland (2007, pp. 109–110) for palaeoecological habitat analysis.
+# It accepts taxon habitat (ecocode) data and returns raw and standardized
+# (within-sample) habitat representation values using both presence/absence and
+# abundance data.
+#
+# The four methods:
+#
+# Presence-based
+# 1A Raw: Count of taxa representing each habitat class per sample.
+# 1B %SumRep: Percent of taxa representing each habitat class per sample.
+# %SumRep = number of taxa in habitat class (C) in sample (S) / total taxa across all C in that S × 100
+#
+# Abundance-weighted:
+# 2A Raw: Total individuals representing each habitat class per sample.
+# 2B %SumRep: Percent of individuals representing each habitat class per sample.
+# %SumRep = total sum of individual of all taxa in habitat class (C) in sample (S) / total individuals across all C in that S x 100
+#
+# Where:
+# S = sample (in this case 500-year bin)
+# C = habitat class (ecocode)
+calc_ecocodes <- function(data, bin_col, ecocode_col, taxon_col, abundance_col,
+                          method = c("1A","1B","2A","2B")) {
 
-  # Standardize column references
-  data <- data %>%
-    dplyr::select(end = {{ end_col }},
-                  ecocode = {{ ecocode_col }},
-                  value = {{ value_col }})
+  method <- match.arg(method)
 
-  # Summarize per ecocode per bin based on method
-  # Buckland (2007) 1B = presence; Buckland (2007) 2B = abundance weighed
-  ecocode_bin <- data %>%
-    group_by(end, ecocode) %>%
-    summarise(
-      rep = if (method == "presence") length(unique(value)) else sum(value),
-      .groups = "drop"
+  df <- data %>%
+    dplyr::select(
+      bin       = {{ bin_col }},
+      ecocode   = {{ ecocode_col }},
+      taxon     = {{ taxon_col }},
+      abundance = {{ abundance_col }}
     )
 
-  # Convert to %SumRep within each bin (Buckland (2007) %-standardization)
-  sumrep <- ecocode_bin %>%
-    group_by(end) %>%
-    mutate(percent = rep / sum(rep) * 100) %>%
-    ungroup() %>%
-    dplyr::select(end, ecocode, percent) %>%
-    mutate(method = method)
+  # Treat each bin as a sample
+  if (method == "1A") {
+    # Raw presence: count taxon-ecocode pairs
+    df_out <- df %>%
+      dplyr::mutate(rep = 1) %>%
+      dplyr::group_by(bin, ecocode) %>%
+      dplyr::summarise(value = sum(rep), .groups = "drop") %>%
+      dplyr::mutate(method = "1A Raw")
 
-  return(sumrep)
+  } else if (method == "1B") {
+    # %SumRep presence: count taxon-ecocode pairs, normalize per bin
+    df_out <- df %>%
+      distinct(bin, taxon, ecocode) %>%  # unique taxon per bin per ecocode
+      group_by(bin, ecocode) %>%
+      summarise(rep = n(), .groups = "drop") %>%  # count taxa in each ecocode
+      group_by(bin) %>%
+      mutate(value = rep / sum(rep) * 100) %>%  # normalize within bin
+      ungroup() %>%
+      select(bin, ecocode, value) %>%
+      mutate(method = "1B %SumRep")
+
+  } else if (method == "2A") {
+    # Raw abundance: sum abundances per bin / ecocode
+    df_out <- df %>%
+      dplyr::group_by(bin, ecocode) %>%
+      dplyr::summarise(value = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
+      dplyr::mutate(method = "2A Raw")
+
+  } else if (method == "2B") {
+    # %SumRep abundance: sum abundances per bin / ecocode, normalize per bin
+    df_out <- df %>%
+      dplyr::group_by(bin, ecocode) %>%
+      dplyr::summarise(rep = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
+      dplyr::group_by(bin) %>%
+      dplyr::mutate(value = rep / sum(rep) * 100) %>%  # normalize per bin
+      dplyr::ungroup() %>%
+      dplyr::select(bin, ecocode, value) %>%
+      dplyr::mutate(method = "2B %SumRep")
+  }
+
+  return(df_out)
 }
 
 # ---- 9. Compute abundance-weighted and presence-based summaries ----
-# Presence only standardization
-eco_noabund <- calc_sumrep_buckland(
-  data = eco_species %>% distinct(end, ecocode, taxon),
-  end_col = end,
-  ecocode_col = ecocode,
-  value_col = taxon,
-  method = "presence"
-)
-# Abundance weighted standardization
-eco_abund <- calc_sumrep_buckland(
-  data = eco_species,
-  end_col = end,
-  ecocode_col = ecocode,
-  value_col = abundance,
-  method = "abundance"
+methods <- c("1B", "2B")
+
+results <- map_df(
+  methods,
+  ~ calc_ecocodes(
+    eco_species,
+    bin_col = end,
+    ecocode_col = ecocode,
+    taxon_col = taxon,
+    abundance_col = abundance,
+    method = .x
+  )
 )
 
 # ---- 10. Filter out bins with fewer than 5 ecocodes ----
-filter_bins <- function(df) {
-  valid_bins <- df %>%
-    filter(percent > 0) %>%
-    group_by(end) %>%
-    summarise(count = n_distinct(ecocode), .groups = "drop") %>%
-    filter(count > 5) %>%
-    select(end)
+results_filtered <- results %>%
+  dplyr::filter(value > 0) %>%
+  dplyr::group_by(bin, method) %>%
+  dplyr::filter(n_distinct(ecocode) >= 5) %>%
+  dplyr::ungroup()
 
-  df %>% inner_join(valid_bins, by = "end")
-}
-
-eco_abund   <- filter_bins(eco_abund)
-eco_noabund <- filter_bins(eco_noabund)
-
-# ---- 11. Combine abundance and presence-based data ----
-# Combine the two datasets for plotting and add type labels
-eco_combined <- bind_rows(eco_noabund, eco_abund)
-eco_combined$type <- factor(eco_combined$method, levels = c("abundance", "presence"),
-                            labels = c("Abundance Weighted", "No Abundance"))
-
-# ---- 12. Define ecocode order and colors ----
+# ---- 11 Define ecocode order and colors ----
 ecocode_levels <- c(
   "Aquatics", "Indicators: Running water", "Indicators: Standing water",
   "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
@@ -174,10 +203,17 @@ colors <- c(
   "tomato3", "#D5E4A2FF", "darkslategrey", "#46732EFF", "green4", "brown4", "yellowgreen"
 )
 
-eco_combined$ecocode <- factor(eco_combined$ecocode, levels = ecocode_levels)
+results_filtered$ecocode <- factor(results_filtered$ecocode, levels = ecocode_levels)
 
-# ---- 13. Generate combined horizontal figure ----
-fig <- ggplot(eco_combined, aes(x = end, y = percent, fill = ecocode)) +
+# Rename facets
+results_filtered$method <- factor(
+  results_filtered$method,
+  levels = c("2B %SumRep","1B %SumRep"),
+  labels = c("Abundance-weighted", "No Abundance")
+)
+
+# ---- 12. Generate combined horizontal figure ----
+fig <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -188,7 +224,7 @@ fig <- ggplot(eco_combined, aes(x = end, y = percent, fill = ecocode)) +
   guides(fill = guide_legend(nrow = 5, reverse = TRUE)) +
   scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
   coord_flip() +
-  ggh4x::facet_grid2(~type, scales = "free", axes = "x") +
+  ggh4x::facet_grid2(~method, scales = "free", axes = "x") +
   theme_bw() +
   theme(
     axis.text.y = element_text(size = 10),
@@ -198,7 +234,8 @@ fig <- ggplot(eco_combined, aes(x = end, y = percent, fill = ecocode)) +
     legend.title = element_text(size = 12, face = "bold"),
     legend.text = element_text(size = 12)
   ) +
-  labs(y = "%SumRep", x = "Time (Years BP)")
+  labs(y = "%SumRep", x = "Time (Years BP)"
+       )
 
 # ---- 14. Save figure ----
 ggsave(
