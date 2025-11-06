@@ -272,9 +272,9 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
                           data.frame(Time = time_name, Metric = name, Value = value))
       }
     }
-    add_metric("Estimated Richness", richness_div)
+    add_metric("Richness", richness_div)
     add_metric("Shannon", shannon_div)
-    add_metric("Inverse Simpson", simpson_div)
+    add_metric("Simpson", simpson_div)
   }
 
   if (nrow(results) == 0) {
@@ -285,7 +285,7 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
   # ---- Prepare for plotting ----
   results$TimeNumeric <- suppressWarnings(as.numeric(results$Time))
   results$Metric <- factor(results$Metric,
-                           levels = c("Richness", "Shannon", "Inverse Simpson"))
+                           levels = c("Richness", "Shannon", "Simpson"))
 
   plot_min <- min(results$TimeNumeric, na.rm = TRUE) - 500
   plot_max <- max(results$TimeNumeric, na.rm = TRUE) + 500
@@ -306,9 +306,9 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
     scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
     scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
     labs(
-      title = "Alpha diversity metrics (British/Irish Isles)",
+      title = "Alpha diversity",
       subtitle = "Standardized with SRS",
-      x = "Value",
+      x = "Hill number",
       y = "Time (Years BP)",
       fill = "Time Periods"
     ) +
@@ -318,8 +318,10 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
       axis.text.y = element_text(size = 12, colour = "black"),
       axis.text.x = element_text(size = 12, colour = "black", angle = 45, vjust = .5),
       axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
+      axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
       strip.background = element_rect(fill = "#f0f0f0", color = NA),
       strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
+      plot.title = element_text(size = 16, face = "bold", colour = "black"),
       legend.title = element_text(size = 16, face = "bold", colour = "black"),
       legend.text = element_text(size = 12, colour = "black"),
       legend.position = "right"

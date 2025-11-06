@@ -27,8 +27,8 @@ samples <- bugs %>%
   filter(
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
+    between(age_older, -500, 10000),
+    between(age_younger, -500, 10000),
     (age_older - age_younger) <= 2000,
     country != "Greenland",
     between(latitude, 49.8, 62.6),

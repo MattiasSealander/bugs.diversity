@@ -251,8 +251,6 @@ generate_gammaDiversity_plots <-
         if (is.null(meta))
           next
 
-        #cov_time <-
-        #  tryCatch(entropart::Coverage(rowSums(comm_mat)), error = function(e) NA_real_)
         richness <-
           tryCatch(entropart::GammaDiversity(meta, q = 0), error = function(e) NA_real_)
         shannon  <-
@@ -262,10 +260,9 @@ generate_gammaDiversity_plots <-
 
         region_results <- rbind(
           region_results,
-          #data.frame(Time = time_name, Metric = "Coverage", Value = cov_time, Type = dataset_type),
           data.frame(Time = time_name, Metric = "Richness", Value = richness, Type = dataset_type),
           data.frame(Time = time_name, Metric = "Shannon", Value = shannon, Type = dataset_type),
-          data.frame(Time = time_name, Metric = "Inverse Simpson", Value = simpson, Type = dataset_type)
+          data.frame(Time = time_name, Metric = "Simpson", Value = simpson, Type = dataset_type)
         )
       }
     }
@@ -273,7 +270,7 @@ generate_gammaDiversity_plots <-
     region_results$TimeNumeric <- suppressWarnings(as.numeric(region_results$Time))
     region_results <- region_results[!is.na(region_results$TimeNumeric), ]
     region_results$Metric <- factor(region_results$Metric,
-                                    levels = c("Richness", "Shannon", "Inverse Simpson"))
+                                    levels = c("Richness", "Shannon", "Simpson"))
 
     # Keep the same aesthetics as before
     plot_min <- min(region_results$TimeNumeric)
@@ -305,18 +302,24 @@ generate_gammaDiversity_plots <-
       scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
       scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
       labs(
-        title = paste("Gamma Diversity Metrics –", region_name),
-        x = "Diversity Value",
+        title = paste("Gamma Diversity"),
+        x = "Hill number",
         y = "Time (Years BP)",
         fill = "Time Periods"
       ) +
       coord_cartesian(ylim = c(plot_max, plot_min)) +
       theme_minimal(base_size = 12) +
       theme(
-        axis.text.x = element_text(angle = 45, vjust = .5),
-        strip.text = element_text(size = 14, face = "bold"),
-        legend.title = element_text(size = 14, face = "bold"),
-        legend.text = element_text(size = 10)
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black", angle = 45, vjust = .5),
+        axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
+        axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
+        strip.background = element_rect(fill = "#f0f0f0", color = NA),
+        strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
+        plot.title = element_text(size = 16, face = "bold", colour = "black"),
+        legend.title = element_text(size = 16, face = "bold", colour = "black"),
+        legend.text = element_text(size = 12, colour = "black"),
+        legend.position = "right"
       )
 
     safe_name <- gsub("[^A-Za-z0-9_]", "_", region_name)
