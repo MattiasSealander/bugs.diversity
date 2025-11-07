@@ -44,7 +44,7 @@ bugs <- bugs %>%
 
 # ---- 4. Aggregate abundances per sample × taxon ----
 sample_comm <- bugs %>%
-  group_by(sample_id, taxon, region) %>%
+  group_by(site, sample_id, taxon, region) %>%
   summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
 
 # ---- 5. Pivot to sample × taxa matrix ----
@@ -52,8 +52,8 @@ comm <- sample_comm %>%
   pivot_wider(names_from = taxon, values_from = abundance, values_fill = 0)
 
 # ---- 6. Metadata ----
-meta <- comm %>% select(sample_id, region)
-Y <- comm %>% select(-region) %>% column_to_rownames("sample_id")
+meta <- comm %>% select(site, sample_id, region)
+Y <- comm %>% select(-region, -site) %>% column_to_rownames("sample_id")
 
 # ---- 7. Clean & relative abundance ----
 Y[is.na(Y)] <- 0
@@ -81,6 +81,15 @@ mds_points <- as.data.frame(scores(mds, display = "sites")) %>%
   rownames_to_column("sample_id") %>%
   left_join(meta, by = "sample_id")
 
+# ---- 1. Create shape variable ----
+mds_points <- mds_points %>%
+  mutate(
+    shape_group = case_when(
+      region %in% c("Western Europe", "Southern France") ~ site,
+      TRUE ~ "British Isles"  # all British sites share one symbol
+    )
+  )
+
 # ---- 11. PERMANOVA ----
 permanova_res <- adonis2(Y_rel ~ region, data = meta, method = "bray", permutations = 999)
 print(permanova_res)
@@ -89,13 +98,15 @@ print(permanova_res)
 bd <- betadisper(dist_mat, meta$region)
 anova_res <- anova(bd)
 
-# ---- 13. Convex hulls for NMDS (2D: NMDS1 vs NMDS2) ----
+# ==============================================================
+# 13. Convex hulls (2D NMDS1–NMDS2)
+# ==============================================================
 get_hull <- function(df, group_col, x_col = "NMDS1", y_col = "NMDS2") {
   group_sym <- rlang::sym(group_col)
   df %>%
     dplyr::group_split(!!group_sym) %>%
     purrr::map_dfr(function(g) {
-      if(nrow(g) > 2) {
+      if (nrow(g) > 2) {
         hull_idx <- chull(g[[x_col]], g[[y_col]])
         g[hull_idx, , drop = FALSE]
       } else {
@@ -104,7 +115,7 @@ get_hull <- function(df, group_col, x_col = "NMDS1", y_col = "NMDS2") {
     })
 }
 
-hull_data <- get_hull(mds_points, "region")
+hull_data <- get_hull(mds_points, "region", "NMDS1", "NMDS2")
 
 # ---- 14. subtitle ----
 subtitle_text <- paste0(
@@ -115,28 +126,59 @@ subtitle_text <- paste0(
   ", p = ", round(anova_res$`Pr(>F)`[1])
 )
 
-# ---- 14. Plot NMDS ----
-ggplot(mds_points, aes(x = NMDS1, y = NMDS2, color = region)) +
-  geom_polygon(data = hull_data, aes(fill = region, group = region), alpha = 0.3, color = NA) +
-  geom_point(size = 3) +
-  geom_text_repel(aes(label = sample_id), size = 3, max.overlaps = 10) +
-  scale_color_manual(values = c("British Isles" = "#2166AC",
-                                "Western Europe" = "#B2182B",
-                                "Southern France" = "#4DAF4A")) +
-  scale_fill_manual(values = c("British Isles" = "#2166AC",
-                               "Western Europe" = "#B2182B",
-                               "Southern France" = "#4DAF4A")) +
-  theme_minimal(base_size = 14) +
-  labs(title = "NMDS of fossil insect communities by region (sample-level)",
-       subtitle = subtitle_text,
-       x = "NMDS1", y = "NMDS2", color = "Region", fill = "Region") +
-  theme(legend.position = "bottom",
-        plot.title = element_text(face = "bold", size = 16))
 
-# ---- 15. Save figure ----
-ggsave(
-  filename = here("analysis", "figures", "NMDS_samples_by_region.jpg"),
-  width = 50, height = 50, units = "cm", dpi = 300
+# ==============================================================
+# 14. Shape mapping: sites for Western/Southern Europe only
+# ==============================================================
+unique_sites <- unique(mds_points$site[mds_points$region %in% c("Western Europe", "Southern France")])
+shape_values <- setNames(
+  c(0, 8, 2, 3, 4, 5, 6, 7, 10, 21),
+  unique_sites
 )
+shape_values <- c(shape_values, "British Isles" = 21)  # circle
+
+# Assign shape group (either site or region)
+mds_points <- mds_points %>%
+  mutate(shape_group = ifelse(region == "British Isles", "British Isles", site))
+
+
+# ==============================================================
+# 15. Plot NMDS
+# ==============================================================
+ggplot(mds_points, aes(x = NMDS1, y = NMDS2)) +
+  geom_polygon(
+    data = hull_data,
+    aes(x = NMDS1, y = NMDS2, fill = region, group = region),
+    alpha = 0.3, color = NA
+  ) +
+  geom_point(
+    aes(color = region, shape = shape_group),
+    size = 3, stroke = 1
+  ) +
+  #geom_text_repel(aes(label = sample_id), size = 3, max.overlaps = 15) +
+  scale_color_manual(values = c(
+    "British Isles" = "#2166AC",
+    "Western Europe" = "#B2182B",
+    "Southern France" = "#4DAF4A"
+  )) +
+  scale_fill_manual(values = c(
+    "British Isles" = "#2166AC",
+    "Western Europe" = "#B2182B",
+    "Southern France" = "#4DAF4A"
+  )) +
+  scale_shape_manual(values = shape_values) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "NMDS of fossil insect communities by region (sample-level)",
+    subtitle = subtitle_text,
+    x = "NMDS1", y = "NMDS2",
+    color = "Region",
+    fill = "Region"
+  ) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 16)
+  )
+
 
 message("✅ NMDS completed and sample-level regional comparison plot saved.")
