@@ -1,3 +1,18 @@
+@article{avolio_etal2019,
+  author = {Avolio, Meghan L. and Carroll, Ian T. and Collins, Scott L. and Houseman, Gregory R. and Hallett, Lauren M. and Isbell, Forest and Koerner, Sally E. and Komatsu, Kimberly J. and Smith, Melinda D. and Wilcox, Kevin R.},
+  title = {A comprehensive approach to analyzing community dynamics using rank abundance curves},
+  journal = {Ecosphere},
+  volume = {10},
+  number = {10},
+  pages = {e02881},
+  keywords = {codyn, community composition, long-term data, multivariate analysis, R package, richness, spatial variability, temporal variability},
+  doi = {https://doi.org/10.1002/ecs2.2881},
+  url = {https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1002/ecs2.2881},
+  eprint = {https://esajournals.onlinelibrary.wiley.com/doi/pdf/10.1002/ecs2.2881},
+  abstract = {Abstract Univariate and multivariate methods are commonly used to explore the spatial and temporal dynamics of ecological communities, but each has limitations, including oversimplification or abstraction of communities. Rank abundance curves (RACs) potentially integrate these existing methodologies by detailing species-level community changes. Here, we had three goals: first, to simplify analysis of community dynamics by developing a coordinated set of R functions, and second, to demystify the relationships among univariate, multivariate, and RACs measures, and examine how each is influenced by the community parameters as well as data collection methods. We developed new functions for studying temporal changes and spatial differences in RACs in an update to the R package library(“codyn”), alongside other new functions to calculate univariate and multivariate measures of community dynamics. We also developed a new approach to studying changes in the shape of RAC curves. The R package update presented here increases the accessibility of univariate and multivariate measures of community change over time and difference over space. Next, we use simulated and real data to assess the RAC and multivariate measures that are output from our new functions, studying (1) if they are influenced by species richness and evenness, temporal turnover, and spatial variability and (2) how the measures are related to each other. Lastly, we explore the use of the measures with an example from a long-term nutrient addition experiment. We find that the RAC and multivariate measures are not sensitive to species richness and evenness and that all the measures detail unique aspects of temporal change or spatial differences. We also find that species reordering is the strongest correlate of a multivariate measure of compositional change and explains most community change observed in long-term nutrient addition experiment. Overall, we show that species reordering is potentially an understudied determinant of community changes over time or differences between treatments. The functions developed here should enhance the use of RACs to further explore the dynamics of ecological communities.},
+  year = {2019}
+}
+
 @article{beule_karlovsky2020,
   title = {Improved Normalization of Species Count Data in Ecology by Scaling with Ranked Subsampling ({{SRS}}): Application to Microbial Communities.},
   author = {Beule, Lukas and Karlovsky, Petr},
@@ -43,19 +58,33 @@
   url = {http://www.ncdc.noaa.gov/paleo/insect.html}
 }
 
+@inbook{buckland_sjolander2022,
+  title={Approaches to research data infrastructure for archaeological science},
+  ISBN={978-0-8130-6930-2},
+  url={https://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-200459},
+  abstractNote={A significant number of archaeology’s Grand Challenges (Kintigh et al. 2014) can only be addressed through access to large amounts of data from multiple research fields, and advanced tools for aggregating, synthesizing and analyzing them. Archaeological research has seen significant developments in the use of databases and database tools since first adopting them in the late 1960s (Lock 2003). The often small scale of archaeological budgets, and the paucity of long-term funding, has meant that cheaper solutions have most often been used. These have ranged from mainstream database management systems through university site licenses and project specific purchases, to independently coded solutions and more recent open source alternatives. The relatively unusual nature and complexity of archaeological science (see Lidén 2017) data has meant that custom database designs have been the norm. The vast majority of these databases have been built to serve single purposes: from simple sample processing archives, to more complete excavation databases or multi-site macrofossil databases. User interfaces, if present, usually reflect these aims rather than provide for wider audiences. Such databases are an extremely important part of how science is now conducted, and, as explained in this chapter, there are considerable advantages to upscaling them towards becoming components in research infrastructure.},
+  note={[ed] Goldstein, Lynne; Watrall, Ethan},
+  booktitle={Digital heritage and archaeology in practice : data, ethics, and professionalism},
+  publisher={University Press of Florida},
+  author={Buckland, Philip I. and Sjölander, Mattias},
+  year={2022},
+  pages={109–134}
+}
+
+
 @article{chao_jost2015,
-author = {Chao, Anne and Jost, Lou},
-title = {Estimating diversity and entropy profiles via discovery rates of new species},
-journal = {Methods in Ecology and Evolution},
-volume = {6},
-number = {8},
-pages = {873-882},
-keywords = {diversity, diversity profile, entropy profile, Hill numbers, Rényi entropy, species accumulation curve, species discovery rate, Tsallis entropy},
-doi = {https://doi.org/10.1111/2041-210X.12349},
-url = {https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210X.12349},
-eprint = {https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/2041-210X.12349},
-abstract = {Summary The compositional complexity of an assemblage is not expressible as a single number; standard measures such as diversities (Hill numbers) and entropies (Rényi entropies and Tsallis entropies) vary in their order q which determines the measures' emphasis on rare or common species. Ranking and comparing assemblages depend on the choice of q. Rather than selecting one or a few measures to describe an assemblage, it is preferable to convey the complete story by presenting a continuous profile, a plot of diversity or entropy as a function of q ≥ 0. This makes it easy to visually compare the compositional complexities of multiple assemblages and to judge the evenness of the relative abundance distributions of the assemblages. In practice, the profile is plotted for all values of q from 0 to q = 3 or 4 (beyond which it generally changes little). These profiles are usually generated by substituting species sample proportions into the complexity measures. However, this empirical approach typically underestimates the true profile for low values of q, because samples usually miss some of the assemblage's species due to under-sampling. Although bias-reduction methods exist for individual measures of order q = 0, 1 and 2, there has been no analytic method that unifies these bias-corrected estimates into a continuous profile. For incomplete sampling data, this work proposes a novel analytic method to obtain accurate, continuous, low-bias diversity and entropy profiles with focus on low orders of q (0 ≤ q ≤ 3). Our approach is based on reformulating the diversity and entropy of any order q in terms of the successive discovery rates of new species with respect to sample size, that is the successive slopes of the species accumulation curve. A bootstrap method is applied to obtain approximate variances of our proposed profiles and to construct the associated confidence intervals. Extensive simulations from theoretical models and real surveys show that the proposed profiles greatly reduce under-sampling bias and have substantially lower bias and mean-squared error than the empirical profile, especially for q ≤ 1. Our method is also extended to deal with incidence data.},
-year = {2015}
+  author = {Chao, Anne and Jost, Lou},
+  title = {Estimating diversity and entropy profiles via discovery rates of new species},
+  journal = {Methods in Ecology and Evolution},
+  volume = {6},
+  number = {8},
+  pages = {873-882},
+  keywords = {diversity, diversity profile, entropy profile, Hill numbers, Rényi entropy, species accumulation curve, species discovery rate, Tsallis entropy},
+  doi = {https://doi.org/10.1111/2041-210X.12349},
+  url = {https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210X.12349},
+  eprint = {https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/2041-210X.12349},
+  abstract = {Summary The compositional complexity of an assemblage is not expressible as a single number; standard measures such as diversities (Hill numbers) and entropies (Rényi entropies and Tsallis entropies) vary in their order q which determines the measures' emphasis on rare or common species. Ranking and comparing assemblages depend on the choice of q. Rather than selecting one or a few measures to describe an assemblage, it is preferable to convey the complete story by presenting a continuous profile, a plot of diversity or entropy as a function of q ≥ 0. This makes it easy to visually compare the compositional complexities of multiple assemblages and to judge the evenness of the relative abundance distributions of the assemblages. In practice, the profile is plotted for all values of q from 0 to q = 3 or 4 (beyond which it generally changes little). These profiles are usually generated by substituting species sample proportions into the complexity measures. However, this empirical approach typically underestimates the true profile for low values of q, because samples usually miss some of the assemblage's species due to under-sampling. Although bias-reduction methods exist for individual measures of order q = 0, 1 and 2, there has been no analytic method that unifies these bias-corrected estimates into a continuous profile. For incomplete sampling data, this work proposes a novel analytic method to obtain accurate, continuous, low-bias diversity and entropy profiles with focus on low orders of q (0 ≤ q ≤ 3). Our approach is based on reformulating the diversity and entropy of any order q in terms of the successive discovery rates of new species with respect to sample size, that is the successive slopes of the species accumulation curve. A bootstrap method is applied to obtain approximate variances of our proposed profiles and to construct the associated confidence intervals. Extensive simulations from theoretical models and real surveys show that the proposed profiles greatly reduce under-sampling bias and have substantially lower bias and mean-squared error than the empirical profile, especially for q ≤ 1. Our method is also extended to deal with incidence data.},
+  year = {2015}
 }
 
 @article{giesecke_etal2019,
@@ -71,6 +100,36 @@ year = {2015}
   doi = {10.1038/s41467-019-13233-y},
   url = {https://doi.org/10.1038/s41467-019-13233-y},
   abstract = {Climate warming is expected to cause a poleward spread of species, resulting in increased richness at mid to high latitudes and weakening the latitudinal diversity gradient. We used pollen data to test if such a change in the latitudinal diversity gradient occurred during the last major poleward shift of plant species in Europe following the end of the last glacial period. In contrast to expectations, the slope of the gradient strengthened during the Holocene. The increase in temperatures around 10\,ka ago reduced diversity at mid to high latitude sites due to the gradual closure of forests. Deforestation and the introduction of agriculture during the last 5\,ky had a greater impact on richness in central Europe than the earlier climate warming. These results do not support the current view that global warming alone will lead to a loss in biodiversity, and demonstrate that non-climatic human impacts on the latitudinal diversity gradient is of a greater magnitude than climate change.}
+}
+
+@article{habel_etal2019,
+  author = {Habel, Jan Christian and Ulrich, Werner and Biburger, Nina and Seibold, Sebastian and Schmitt, Thomas},
+  title = {Agricultural intensification drives butterfly decline},
+  journal = {Insect Conservation and Diversity},
+  volume = {12},
+  number = {4},
+  pages = {289-295},
+  keywords = {Agricultural intensification, butterflies, insect decline, pesticides, semi-natural grasslands},
+  doi = {https://doi.org/10.1111/icad.12343},
+  url = {https://resjournals.onlinelibrary.wiley.com/doi/abs/10.1111/icad.12343},
+  eprint = {https://resjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/icad.12343},
+  abstract = {Abstract Severe losses of insects have taken place over major parts of Europe. This negative trend is assumed to be largely the result of agricultural intensification. To analyse potential factors causing this loss of species, we assessed butterfly communities at 21 grassland patches. Seventeen of these were distributed across an agricultural landscape dominated by crop fields; four were embedded in two adjoining managed semi-natural grassland areas. We assessed environmental parameters such as patch size and habitat quality for each grassland patch. We further incorporated the surrounding land-cover considering different degrees of land-use intensity. We classified butterfly species into generalists and specialists according their ecological and behavioural characteristics. As in the managed semi-natural reference grasslands, species richness and abundance were higher in patches surrounded by extensively used grasslands and unsprayed crop fields, and lower in patches surrounded by sprayed crop fields. Furthermore, blossom density positively affected butterfly occurrence. Our data revealed that specialised butterfly species mainly occur in managed semi-natural grassland sites, and are largely absent from other grassland plots embedded in the agricultural matrix. Our study underlines the negative impacts of intense conventional agriculture on butterfly species richness and abundance and reveals the urgent need for more nature-friendly cultivation methods. In situ experiments may help to understand and disentangle single drivers causing this negative trend.},
+  year = {2019}
+}
+
+@article{hallman_etal2017,
+  doi = {10.1371/journal.pone.0185809},
+  author = {Hallmann, Caspar A. AND Sorg, Martin AND Jongejans, Eelke AND Siepel, Henk AND Hofland, Nick AND Schwan, Heinz AND Stenmans, Werner AND Müller, Andreas AND Sumser, Hubert AND Hörren, Thomas AND Goulson, Dave AND de Kroon, Hans},
+  journal = {PLOS ONE},
+  publisher = {Public Library of Science},
+  title = {More than 75 percent decline over 27 years in total flying insect biomass in protected areas},
+  year = {2017},
+  month = {10},
+  volume = {12},
+  url = {https://doi.org/10.1371/journal.pone.0185809},
+  pages = {1-21},
+  abstract = {Global declines in insects have sparked wide interest among scientists, politicians, and the general public. Loss of insect diversity and abundance is expected to provoke cascading effects on food webs and to jeopardize ecosystem services. Our understanding of the extent and underlying causes of this decline is based on the abundance of single species or taxonomic groups only, rather than changes in insect biomass which is more relevant for ecological functioning. Here, we used a standardized protocol to measure total insect biomass using Malaise traps, deployed over 27 years in 63 nature protection areas in Germany (96 unique location-year combinations) to infer on the status and trend of local entomofauna. Our analysis estimates a seasonal decline of 76%, and mid-summer decline of 82% in flying insect biomass over the 27 years of study. We show that this decline is apparent regardless of habitat type, while changes in weather, land use, and habitat characteristics cannot explain this overall decline. This yet unrecognized loss of insect biomass must be taken into account in evaluating declines in abundance of species depending on insects as a food source, and ecosystem functioning in the European landscape.},
+  number = {10},
 }
 
 @Manual{hallett_etal2020,
@@ -98,6 +157,58 @@ year = {2015}
   keywords = {bioinformatics,microbial ecology,microbiome analysis,normalization,QIIME 2 plugin,R package,scaling with ranked subsampling (SRS)}
 }
 
+@article{hoffman_etal2021,
+  title = {Nearly 80 systematic reviews were published each day: Observational study on trends in epidemiology and reporting over the years 2000-2019},
+  journal = {Journal of Clinical Epidemiology},
+  volume = {138},
+  pages = {1-11},
+  year = {2021},
+  issn = {0895-4356},
+  doi = {https://doi.org/10.1016/j.jclinepi.2021.05.022},
+  url = {https://www.sciencedirect.com/science/article/pii/S0895435621001748},
+  author = {Falk Hoffmann and Katharina Allers and Tanja Rombey and Jasmin Helbach and Amrei Hoffmann and Tim Mathes and Dawid Pieper},
+  keywords = {Evidence-Based Practice, Systematic Review, Meta-Analysis, Cochrane Review, Trends, Reporting},
+  abstract = {Background
+  Systematic reviews (SRs) are useful tools in synthesising the available evidence, but high numbers of overlapping SRs are also discussed in the context of research waste. Although it is often claimed that the number of SRs being published is increasing steadily, there are no precise data on that. We aimed to assess trends in the epidemiology and reporting of published SRs over the last 20 years.
+  Methods
+  A retrospective observational study was conducted to identify potentially eligible SRs indexed in PubMed from 2000 to 2019. From all 572,871 records retrieved, we drew a simple random sample of 4,000. The PRISMA-P definition of SRs was applied to full texts and only SRs published in English were included. Characteristics were extracted by one reviewer, with a 20% sample verified by a second person.
+  Results
+  A total of 1,132 SRs published in 710 different journals were included. The estimated number of SRs indexed in 2000 was 1,432 (95% CI: 547–2,317), 5,013 (95% CI: 3,375–6,650) in 2010 and 29,073 (95% CI: 25,445–32,702) in 2019. Transparent reporting of key items increased over the years. About 7 out of 10 named their article a SR (2000–2004: 41.9% and 2015–2019: 74.4%). In 2000–2004, 32.3% of SRs were based in the UK (0% in China), in 2015–2019 24.0% were from China and 10.8% from the UK. Nearly all articles from China (94.9%) conducted a meta-analysis (overall: 58.9%). Cochrane reviews (n = 84; 7.4%) less often imposed language restrictions, but often did not report the number of records and full texts screened and did not name their article a SR (22.6% vs. 73.4%).
+  Conclusions
+  We observed a more than 20-fold increase in the number of SRs indexed over the last 20 years. In 2019, this is equivalent to 80 SRs per day. Over time, SRs got more diverse in respect to journals, type of review, and country of corresponding authors. The high proportion of meta-analyses from China needs further investigation.
+  Study registration
+  Open Science Framework (https://osf.io/pxjrv/).}
+}
+
+@article{lawrence_etal2013,
+  doi = {10.1371/journal.pcbi.1003118},
+  author = {Lawrence, Michael AND Huber, Wolfgang AND Pagès, Hervé AND Aboyoun, Patrick AND Carlson, Marc AND Gentleman, Robert AND Morgan, Martin T. AND Carey, Vincent J.},
+  journal = {PLOS Computational Biology},
+  publisher = {Public Library of Science},
+  title = {Software for Computing and Annotating Genomic Ranges},
+  year = {2013},
+  month = {08},
+  volume = {9},
+  url = {https://doi.org/10.1371/journal.pcbi.1003118},
+  pages = {1-10},
+  abstract = {We describe Bioconductor infrastructure for representing and computing on annotated genomic ranges and integrating genomic data with the statistical computing features of R and its extensions. At the core of the infrastructure are three packages: IRanges, GenomicRanges, and GenomicFeatures. These packages provide scalable data structures for representing annotated ranges on the genome, with special support for transcript structures, read alignments and coverage vectors. Computational facilities include efficient algorithms for overlap and nearest neighbor detection, coverage calculation and other range operations. This infrastructure directly supports more than 80 other Bioconductor packages, including those for sequence analysis, differential expression analysis and visualization.},
+  number = {8},
+}
+
+@article{lenoir_svenning2015,
+  author = {Lenoir, J. and Svenning, J.-C.},
+  title = {Climate-related range shifts – a global multidimensional synthesis and new research directions},
+  journal = {Ecography},
+  volume = {38},
+  number = {1},
+  pages = {15-28},
+  doi = {https://doi.org/10.1111/ecog.00967},
+  url = {https://nsojournals.onlinelibrary.wiley.com/doi/abs/10.1111/ecog.00967},
+  eprint = {https://nsojournals.onlinelibrary.wiley.com/doi/pdf/10.1111/ecog.00967},
+  abstract = {Poleward and upward shifts are the most frequent types of range shifts that have been reported in response to contemporary climate change. However, the number of reports documenting other types of range shifts – such as in east-west directions across longitudes or, even more unexpectedly, towards tropical latitudes and lower elevations – is increasing rapidly. Recent studies show that these range shifts may not be so unexpected once the local climate changes are accounted for. We here provide an updated synthesis of the fast-moving research on climate-related range shifts. By describing the current state of the art on geographical patterns of species range shifts under contemporary climate change for plants and animals across both terrestrial and marine ecosystems, we identified a number of research shortfalls. In addition to the recognised geographic shortfall in the tropics, we found taxonomic and methodological shortfalls with knowledge gaps regarding range shifts of prokaryotes, lowland range shifts of terrestrial plants, and bathymetric range shifts of marine plants. Based on this review, we provide a research agenda for filling these gaps. We outline a comprehensive framework for assessing multidimensional changes in species distributions, which should then be contrasted with expectations based on climate change indices, such as velocity measures accounting for complex local climate changes. Finally, we propose a unified classification of geographical patterns of species range shifts, arranged in a bi-dimensional space defined by species’ persistence and movement rates. Placing the observed and expected shifts into this bi-dimensional space should lead to more informed assessments of extinction risks.},
+  year = {2015}
+}
+
 @unpublished{marcon2015,
   TITLE = {{Practical Estimation of Diversity from Abundance Data}},
   AUTHOR = {Marcon, Eric},
@@ -109,6 +220,19 @@ year = {2015}
   PDF = {https://agroparistech.hal.science/hal-01212435v2/file/Estimation.pdf},
   HAL_ID = {hal-01212435},
   HAL_VERSION = {v2},
+}
+
+@article{marcon_herault2015,
+  title={entropart: An R Package to Measure and Partition Diversity},
+  volume={67},
+  url={https://www.jstatsoft.org/index.php/jss/article/view/v067i08},
+  doi={10.18637/jss.v067.i08},
+  abstract={entropart is a package for R designed to estimate diversity based on HCDT entropy or similarity-based entropy. It allows calculating species-neutral, phylogenetic and functional entropy and diversity, partitioning them and correcting them for estimation bias.},
+  number={8},
+  journal={Journal of Statistical Software},
+  author={Marcon, Eric and Hérault, Bruno},
+  year={2015},
+  pages={1–26}
 }
 
 @article{mcmurdie_holmes2014,
@@ -126,13 +250,42 @@ year = {2015}
   abstract = {Author Summary The term microbiome refers to the ecosystem of microbes that live in a defined environment. The decreasing cost and increasing speed of DNA sequencing technology has recently provided scientists with affordable and timely access to the genes and genomes of microbiomes that inhabit our planet and even our own bodies. In these investigations many microbiome samples are sequenced at the same time on the same DNA sequencing machine, but often result in total numbers of sequences per sample that are vastly different. The common procedure for addressing this difference in sequencing effort across samples – different library sizes – is to either (1) base analyses on the proportional abundance of each species in a library, or (2) rarefy, throw away sequences from the larger libraries so that all have the same, smallest size. We show that both of these normalization methods can work when comparing obviously-different whole microbiomes, but that neither method works well when comparing the relative proportions of each bacterial species across microbiome samples. We show that alternative methods based on a statistical mixture model perform much better and can be easily adapted from a separate biological sub-discipline, called RNA-Seq analysis.}
 }
 
+@article{morrison_etal2021,
+  doi = {10.1371/journal.pone.0246662},
+  author = {Morrison, Kathleen D. AND Hammer, Emily AND Boles, Oliver AND Madella, Marco AND Whitehouse, Nicola AND Gaillard, Marie-Jose AND Bates, Jennifer AND Vander Linden, Marc AND Merlo, Stefania AND Yao, Alice AND Popova, Laura AND Hill, Austin Chad AND Antolin, Ferran AND Bauer, Andrew AND Biagetti, Stefano AND Bishop, Rosie R. AND Buckland, Phillip AND Cruz, Pablo AND Dreslerová, Dagmar AND Dusseldorp, Gerrit AND Ellis, Erle AND Filipovic, Dragana AND Foster, Thomas AND Hannaford, Matthew J. AND Harrison, Sandy P. AND Hazarika, Manjil AND Herold, Hajnalka AND Hilpert, Johanna AND Kaplan, Jed O. AND Kay, Andrea AND Klein Goldewijk, Kees AND Kolář, Jan AND Kyazike, Elizabeth AND Laabs, Julian AND Lancelotti, Carla AND Lane, Paul AND Lawrence, Dan AND Lewis, Krista AND Lombardo, Umberto AND Lucarini, Giulio AND Arroyo-Kalin, Manuel AND Marchant, Rob AND Mayle, Francis AND McClatchie, Meriel AND McLeester, Madeleine AND Mooney, Scott AND Moskal-del Hoyo, Magdalena AND Navarrete, Vanessa AND Ndiema, Emmanuel AND Góes Neves, Eduardo AND Nowak, Marek AND Out, Welmoed A. AND Petrie, Cameron AND Phelps, Leanne N. AND Pinke, Zsolt AND Rostain, Stéphen AND Russell, Thembi AND Sluyter, Andrew AND Styring, Amy K. AND Tamanaha, Eduardo AND Thomas, Evert AND Veerasamy, Selvakumar AND Welton, Lynn AND Zanon, Marco},
+  journal = {PLOS ONE},
+  publisher = {Public Library of Science},
+  title = {Mapping past human land use using archaeological data: A new classification for global land use synthesis and data harmonization},
+  year = {2021},
+  month = {04},
+  volume = {16},
+  url = {https://doi.org/10.1371/journal.pone.0246662},
+  pages = {1-38},
+  abstract = {In the 12,000 years preceding the Industrial Revolution, human activities led to significant changes in land cover, plant and animal distributions, surface hydrology, and biochemical cycles. Earth system models suggest that this anthropogenic land cover change influenced regional and global climate. However, the representation of past land use in earth system models is currently oversimplified. As a result, there are large uncertainties in the current understanding of the past and current state of the earth system. In order to improve representation of the variety and scale of impacts that past land use had on the earth system, a global effort is underway to aggregate and synthesize archaeological and historical evidence of land use systems. Here we present a simple, hierarchical classification of land use systems designed to be used with archaeological and historical data at a global scale and a schema of codes that identify land use practices common to a range of systems, both implemented in a geospatial database. The classification scheme and database resulted from an extensive process of consultation with researchers worldwide. Our scheme is designed to deliver consistent, empirically robust data for the improvement of land use models, while simultaneously allowing for a comparative, detailed mapping of land use relevant to the needs of historical scholars. To illustrate the benefits of the classification scheme and methods for mapping historical land use, we apply it to Mesopotamia and Arabia at 6 kya (c. 4000 BCE). The scheme will be used to describe land use by the Past Global Changes (PAGES) LandCover6k working group, an international project comprised of archaeologists, historians, geographers, paleoecologists, and modelers. Beyond this, the scheme has a wide utility for creating a common language between research and policy communities, linking archaeologists with climate modelers, biodiversity conservation workers and initiatives.},
+  number = {4},
+}
+
 @Manual{oksanen_etal2024,
-    title = {vegan: Community Ecology Package},
-    author = {Jari Oksanen and Gavin L. Simpson and F. Guillaume Blanchet and Roeland Kindt and Pierre Legendre and Peter R. Minchin and R.B. O'Hara and Peter Solymos and M. Henry H. Stevens and Eduard Szoecs and Helene Wagner and Matt Barbour and Michael Bedward and Ben Bolker and Daniel Borcard and Gustavo Carvalho and Michael Chirico and Miquel {De Caceres} and Sebastien Durand and Heloisa Beatriz Antoniazi Evangelista and Rich FitzJohn and Michael Friendly and Brendan Furneaux and Geoffrey Hannigan and Mark O. Hill and Leo Lahti and Dan McGlinn and Marie-Helene Ouellette and Eduardo {Ribeiro Cunha} and Tyler Smith and Adrian Stier and Cajo J.F. {Ter Braak} and James Weedon},
-    year = {2024},
-    note = {R package version 2.6-8},
-    url = {https://CRAN.R-project.org/package=vegan},
-  }
+  title = {vegan: Community Ecology Package},
+  author = {Jari Oksanen and Gavin L. Simpson and F. Guillaume Blanchet and Roeland Kindt and Pierre Legendre and Peter R. Minchin and R.B. O'Hara and Peter Solymos and M. Henry H. Stevens and Eduard Szoecs and Helene Wagner and Matt Barbour and Michael Bedward and Ben Bolker and Daniel Borcard and Gustavo Carvalho and Michael Chirico and Miquel {De Caceres} and Sebastien Durand and Heloisa Beatriz Antoniazi Evangelista and Rich FitzJohn and Michael Friendly and Brendan Furneaux and Geoffrey Hannigan and Mark O. Hill and Leo Lahti and Dan McGlinn and Marie-Helene Ouellette and Eduardo {Ribeiro Cunha} and Tyler Smith and Adrian Stier and Cajo J.F. {Ter Braak} and James Weedon},
+  year = {2024},
+  note = {R package version 2.6-8},
+  url = {https://CRAN.R-project.org/package=vegan},
+}
+
+@article{page_etal2015,
+  ISSN = {00063568, 15253244},
+  URL = {https://www.jstor.org/stable/90007349},
+  author = {LAWRENCE M. PAGE and BRUCE J. MACFADDEN and JOSE A. FORTES and PAMELA S. SOLTIS and GREG RICCARDI},
+  journal = {BioScience},
+  number = {9},
+  pages = {841--842},
+  publisher = {[American Institute of Biological Sciences, Oxford University Press]},
+  title = {Digitization of Biodiversity Collections Reveals Biggest Data on Biodiversity},
+  urldate = {2025-11-14},
+  volume = {65},
+  year = {2015}
+}
 
 @article{pilotto_etal2022,
   title = {Late {{Holocene}} Anthropogenic Landscape Change in Northwestern {{Europe}} Impacted Insect Biodiversity as Much as Climate Change Did after the Last {{Ice Age}}.},
@@ -154,6 +307,20 @@ year = {2015}
   keywords = {*Climate Change,*Coleoptera,Animals,Biodiversity,biotic transitions,Coleoptera,Ecosystem,Europe,fossil beetles,Fossils,Insecta,palaeoentomology}
 }
 
+@article{pollo_etal2025,
+  author = {Pollo, Pietro  and Lagisz, Malgorzata  and Macedo-Rego, Renato C.  and Mizuno, Ayumi  and Yang, Yefeng  and Nakagawa, Shinichi },
+  title = {Reliability of meta-analyses in ecology and evolution: (mostly) good news from a case study on sexual signals},
+  journal = {Proceedings of the Royal Society B: Biological Sciences},
+  volume = {292},
+  number = {2047},
+  pages = {20242782},
+  year = {2025},
+  doi = {10.1098/rspb.2024.2782},
+  URL = {https://royalsocietypublishing.org/doi/abs/10.1098/rspb.2024.2782},
+  eprint = {https://royalsocietypublishing.org/doi/pdf/10.1098/rspb.2024.2782},
+  abstract = { Meta-analyses are powerful synthesis tools that are popular in ecology and evolution owing to the rapidly growing literature of this field. Although the usefulness of meta-analyses depends on their reliability, such as the precision of individual and mean effect sizes, attempts to reproduce meta-analyses’ results remain rare in ecology and evolution. Here, we assess the reliability of 41 meta-analyses on sexual signals by evaluating the reproducibility and replicability of their results. We attempted to: (i) reproduce meta-analyses’ mean effect sizes using the datasets they provided; (ii) reproduce meta-analyses’ effect sizes by re-extracting 5703 effect sizes from 246 primary studies they used as sources; (iii) assess the extent of relevant data missed by original meta-analyses; and (iv) replicate meta-analyses’ mean effect sizes after incorporating re-extracted and relevant missing data. We found many discrepancies between meta-analyses’ reported results and those generated by our analyses for all reproducibility and replicability attempts. Nonetheless, we argue that the meta-analyses we evaluated are largely reproducible and replicable because the differences we found were small in magnitude, leaving the original interpretation of these meta-analyses’ results unchanged. Still, we highlight issues we observed in these meta-analyses that affected their reliability, providing recommendations to ameliorate them. }
+}
+
 @Manual{rcore2021,
   title = {R: A Language and Environment for Statistical Computing},
   author = {{R Core Team}},
@@ -162,6 +329,22 @@ year = {2015}
   year = {2021},
   url = {https://www.R-project.org/},
 }
+
+@article{raven_wagner2021,
+  doi:10.1073/pnas.2002548117,
+  author = {Peter H. Raven  and David L. Wagner },
+  title = {Agricultural intensification and climate change are rapidly decreasing insect biodiversity},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume = {118},
+  number = {2},
+  pages = {e2002548117},
+  year = {2021},
+  doi = {10.1073/pnas.2002548117},
+  URL = {https://www.pnas.org/doi/abs/10.1073/pnas.2002548117},
+  eprint = {https://www.pnas.org/doi/pdf/10.1073/pnas.2002548117},
+  abstract = {Major declines in insect biomass and diversity, reviewed here, have become obvious and well documented since the end of World War II. Here, we conclude that the spread and intensification of agriculture during the past half century is directly related to these losses. In addition, many areas, including tropical mountains, are suffering serious losses because of climate change as well. Crops currently occupy about 11\% of the world’s land surface, with active grazing taking place over an additional 30\%. The industrialization of agriculture during the second half of the 20th century involved farming on greatly expanded scales, monoculturing, the application of increasing amounts of pesticides and fertilizers, and the elimination of interspersed hedgerows and other wildlife habitat fragments, all practices that are destructive to insect and other biodiversity in and near the fields. Some of the insects that we are destroying, including pollinators and predators of crop pests, are directly beneficial to the crops. In the tropics generally, natural vegetation is being destroyed rapidly and often replaced with export crops such as oil palm and soybeans. To mitigate the effects of the Sixth Mass Extinction event that we have caused and are experiencing now, the following will be necessary: a stable (and almost certainly lower) human population, sustainable levels of consumption, and social justice that empowers the less wealthy people and nations of the world, where the vast majority of us live, will be necessary.}
+}
+
 
 @article{sanders1968,
   title = {Marine {{Benthic Diversity}}: {{A Comparative Study}}},
@@ -180,7 +363,68 @@ year = {2015}
   abstract = {[In this paper a methodology is presented for measuring diversity based on rarefaction of actual samples. By the use of this technique, a within-habitat analysis was made of the bivalve and polychaete components of soft-bottom marine faunas which differed in latitude, depth, temperature, and salinity. The resulting diversity values were highly correlated with the physical stability and past history of these environments. A stability-time hypothesis was invoked to fit these findings, and, with this hypothesis, predictions were made about the diversities present in certain other environments as yet unstudied. The two types of diversity, based on numerical percentage composition and on number of species, were compared and shown to be poorly correlated with each other. Our data indicated that species number is the more valid diversity measurement. The rarefaction methodology was compared with a number of diversity indexes using identical data. Many of these indexes were markedly influenced by sample size. Good agreement was found between the rarefaction methodology and the Shannon-Wiener information function.]}
 }
 
-@ARTICLE{Tresp_etal2016,
+@article{schachat_labandeira2020,
+  author = {Schachat, Sandra R and Labandeira, Conrad C},
+  title = {Are Insects Heading Toward Their First Mass Extinction? Distinguishing Turnover From Crises in Their Fossil Record},
+  journal = {Annals of the Entomological Society of America},
+  volume = {114},
+  number = {2},
+  pages = {99-118},
+  year = {2020},
+  month = {12},
+  abstract = {Time and again, over hundreds of millions of years, environmental disturbances have caused mass extinctions of animals ranging from reptiles to corals. The anthropogenic loss of species diversity happening now is often discussed as the ‘sixth mass extinction’ in light of the ‘Big Five’ mass extinctions in the fossil record. But insects, whose taxonomic diversity now appears to be threatened by human activity, have a unique extinction history. Prehistoric losses of insect diversity at the levels of order and family appear to have been driven by competition among insect lineages, with biotic replacement ensuring minimal net losses in taxonomic diversity. The end-Permian extinction, the ‘mother of mass extinctions’ in the seas, was more of a faunal turnover than a mass extinction for insects. Insects’ current biotic crisis has been measured in terms of the loss of abundance and biomass (rather than the loss of species, genera, or families) and these are essentially impossible to measure in the fossil record. However, should the ongoing loss of insect abundance and biomass cause the demise of many insect families, the current extinction event may well be the first sudden loss of higher-level insect diversity in our planet’s history. This is not insects’ sixth mass extinction—in fact, it may become their first.},
+  issn = {0013-8746},
+  doi = {10.1093/aesa/saaa042},
+  url = {https://doi.org/10.1093/aesa/saaa042},
+  eprint = {https://academic.oup.com/aesa/article-pdf/114/2/99/36579543/saaa042.pdf},
+}
+
+@article{schmid_schiffels2023,
+  doi:10.1073/pnas.2218375120,
+  author = {Clemens Schmid  and Stephan Schiffels },
+  title = {Estimating human mobility in Holocene Western Eurasia with large-scale ancient genomic data},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume = {120},
+  number = {9},
+  pages = {e2218375120},
+  year = {2023},
+  doi = {10.1073/pnas.2218375120},
+  URL = {https://www.pnas.org/doi/abs/10.1073/pnas.2218375120},
+  eprint = {https://www.pnas.org/doi/pdf/10.1073/pnas.2218375120},
+  abstract = {Ancient human DNA (aDNA) extracted from archaeological contexts allows reconstructing past population movements. Previous methods work by calculating proportions of shared ancestry among individuals or groups in order to answer specific, regional research questions. Here, we propose a large-scale algorithm to quantify human mobility through time and space using bulk aDNA data. The algorithm has two core components: i) interpolation of the spatiotemporal distribution of genetic ancestry to obtain a continuous ancestry information field and ii) probabilistic estimation of a spatial genetic similarity surface for each input sample by projecting its ancestry profile into this field. We apply this to thousands of published genomic samples in the last 10,000 y to trace diachronic mobility patterns in Western Eurasia. The recent increase in openly available ancient human DNA samples allows for large-scale meta-analysis applications. Trans-generational past human mobility is one of the key aspects that ancient genomics can contribute to since changes in genetic ancestry—unlike cultural changes seen in the archaeological record—necessarily reflect movements of people. Here, we present an algorithm for spatiotemporal mapping of genetic profiles, which allow for direct estimates of past human mobility from large ancient genomic datasets. The key idea of the method is to derive a spatial probability surface of genetic similarity for each individual in its respective past. This is achieved by first creating an interpolated ancestry field through space and time based on multivariate statistics and Gaussian process regression and then using this field to map the ancient individuals into space according to their genetic profile. We apply this algorithm to a dataset of 3138 aDNA samples with genome-wide data from Western Eurasia in the last 10,000 y. Finally, we condense this sample-wise record with a simple summary statistic into a diachronic measure of mobility for subregions in Western, Central, and Southern Europe. For regions and periods with sufficient data coverage, our similarity surfaces and mobility estimates show general concordance with previous results and provide a meta-perspective of genetic changes and human mobility.}
+}
+
+@article{seidl_etal2017,
+  title = {Forest Disturbances under Climate Change},
+  author = {Seidl, Rupert and Thom, Dominik and Kautz, Markus and Martin-Benito, Dario and Peltoniemi, Mikko and Vacchiano, Giorgio and Wild, Jan and Ascoli, Davide and Petr, Michal and Honkaniemi, Juha and Lexer, Manfred J. and Trotsiuk, Volodymyr and Mairota, Paola and Svoboda, Miroslav and Fabrika, Marek and Nagel, Thomas A. and Reyer, Christopher P. O.},
+  date = {2017-06-01},
+  journaltitle = {Nature Climate Change},
+  shortjournal = {Nature Climate Change},
+  volume = {7},
+  number = {6},
+  pages = {395--402},
+  issn = {1758-6798},
+  doi = {10.1038/nclimate3303},
+  url = {https://doi.org/10.1038/nclimate3303},
+  abstract = {Changes in forest disturbance are likely to be greatest in coniferous forests and the boreal biome, according to a review of global climate change effects on biotic and abiotic forest disturbance agents and their interactions.}
+}
+
+@article{stehphens_etal2019,
+  doi:10.1126/science.aax1192,
+  author = {Lucas Stephens  and Dorian Fuller  and Nicole Boivin  and Torben Rick  and Nicolas Gauthier  and Andrea Kay  and Ben Marwick  and Chelsey Geralda Armstrong  and C. Michael Barton  and Tim Denham  and Kristina Douglass  and Jonathan Driver  and Lisa Janz  and Patrick Roberts  and J. Daniel Rogers  and Heather Thakar  and Mark Altaweel  and Amber L. Johnson  and Maria Marta Sampietro Vattuone  and Mark Aldenderfer  and Sonia Archila  and Gilberto Artioli  and Martin T. Bale  and Timothy Beach  and Ferran Borrell  and Todd Braje  and Philip I. Buckland  and Nayeli Guadalupe Jiménez Cano  and José M. Capriles  and Agustín Diez Castillo  and Çiler Çilingiroğlu  and Michelle Negus Cleary  and James Conolly  and Peter R. Coutros  and R. Alan Covey  and Mauro Cremaschi  and Alison Crowther  and Lindsay Der  and Savino di Lernia  and John F. Doershuk  and William E. Doolittle  and Kevin J. Edwards  and Jon M. Erlandson  and Damian Evans  and Andrew Fairbairn  and Patrick Faulkner  and Gary Feinman  and Ricardo Fernandes  and Scott M. Fitzpatrick  and Ralph Fyfe  and Elena Garcea  and Steve Goldstein  and Reed Charles Goodman  and Jade Dalpoim Guedes  and Jason Herrmann  and Peter Hiscock  and Peter Hommel  and K. Ann Horsburgh  and Carrie Hritz  and John W. Ives  and Aripekka Junno  and Jennifer G. Kahn  and Brett Kaufman  and Catherine Kearns  and Tristram R. Kidder  and François Lanoë  and Dan Lawrence  and Gyoung-Ah Lee  and Maureece J. Levin  and Henrik B. Lindskoug  and José Antonio López-Sáez  and Scott Macrae  and Rob Marchant  and John M. Marston  and Sarah McClure  and Mark D. McCoy  and Alicia Ventresca Miller  and Michael Morrison  and Giedre Motuzaite Matuzeviciute  and Johannes Müller  and Ayushi Nayak  and Sofwan Noerwidi  and Tanya M. Peres  and Christian E. Peterson  and Lucas Proctor  and Asa R. Randall  and Steve Renette  and Gwen Robbins Schug  and Krysta Ryzewski  and Rakesh Saini  and Vivian Scheinsohn  and Peter Schmidt  and Pauline Sebillaud  and Oula Seitsonen  and Ian A. Simpson  and Arkadiusz Sołtysiak  and Robert J. Speakman  and Robert N. Spengler  and Martina L. Steffen  and Michael J. Storozum  and Keir M. Strickland  and Jessica Thompson  and T. L. Thurston  and Sean Ulm  and M. Cemre Ustunkaya  and Martin H. Welker  and Catherine West  and Patrick Ryan Williams  and David K. Wright  and Nathan Wright  and Muhammad Zahir  and Andrea Zerboni  and Ella Beaudoin  and Santiago Munevar Garcia  and Jeremy Powell  and Alexa Thornton  and Jed O. Kaplan  and Marie-José Gaillard  and Kees Klein Goldewijk  and Erle Ellis },
+  title = {Archaeological assessment reveals Earth’s early transformation through land use},
+  journal = {Science},
+  volume = {365},
+  number = {6456},
+  pages = {897-902},
+  year = {2019},
+  doi = {10.1126/science.aax1192},
+  URL = {https://www.science.org/doi/abs/10.1126/science.aax1192},
+  eprint = {https://www.science.org/doi/pdf/10.1126/science.aax1192},
+  abstract = {Humans began to leave lasting impacts on Earth's surface starting 10,000 to 8000 years ago. Through a synthetic collaboration with archaeologists around the globe, Stephens et al. compiled a comprehensive picture of the trajectory of human land use worldwide during the Holocene (see the Perspective by Roberts). Hunter-gatherers, farmers, and pastoralists transformed the face of Earth earlier and to a greater extent than has been widely appreciated, a transformation that was essentially global by 3000 years before the present. Science, this issue p. 897; see also p. 865 A map of archaeological knowledge on land use reveals a planet transformed by humans by 3000 years ago. Environmentally transformative human use of land accelerated with the emergence of agriculture, but the extent, trajectory, and implications of these early changes are not well understood. An empirical global assessment of land use from 10,000 years before the present (yr B.P.) to 1850 CE reveals a planet largely transformed by hunter-gatherers, farmers, and pastoralists by 3000 years ago, considerably earlier than the dates in the land-use reconstructions commonly used by Earth scientists. Synthesis of knowledge contributed by more than 250 archaeologists highlighted gaps in archaeological expertise and data quality, which peaked for 2000 yr B.P. and in traditionally studied and wealthier regions. Archaeological reconstruction of global land-use history illuminates the deep roots of Earth’s transformation and challenges the emerging Anthropocene paradigm that large-scale anthropogenic global environmental change is mostly a recent phenomenon.}
+}
+
+@ARTICLE{tresp_etal2016,
   author={Tresp, Volker and Marc Overhage, J. and Bundschus, Markus and Rabizadeh, Shahrooz and Fasching, Peter A. and Yu, Shipeng},
   journal={Proceedings of the IEEE},
   title={Going Digital: A Survey on Digitalization and Large-Scale Data Analytics in Healthcare},
@@ -189,7 +433,22 @@ year = {2015}
   number={11},
   pages={2180-2206},
   keywords={Market research;Data analysis;Drugs;Hospitals;Diseases;Big data;Computer applications;Medical services;Digital systems;Visual analytics;Large-scale systems},
-  doi={10.1109/JPROC.2016.2615052}}
+  doi={10.1109/JPROC.2016.2615052}
+}
+
+@article{vanklink_etal2020,
+  author = {Roel van Klink  and Diana E. Bowler  and Konstantin B. Gongalsky  and Ann B. Swengel  and Alessandro Gentile  and Jonathan M. Chase },
+  title = {Meta-analysis reveals declines in terrestrial but increases in freshwater insect abundances},
+  journal = {Science},
+  volume = {368},
+  number = {6489},
+  pages = {417-420},
+  year = {2020},
+  doi = {10.1126/science.aax9931},
+  URL = {https://www.science.org/doi/abs/10.1126/science.aax9931},
+  eprint = {https://www.science.org/doi/pdf/10.1126/science.aax9931},
+  abstract = {Recent studies have reported alarming declines in insect populations, but questions persist about the breadth and pattern of such declines. van Klink et al. compiled data from 166 long-term surveys across 1676 globally distributed sites and confirmed declines in terrestrial insects, albeit at lower rates than some other studies have reported (see the Perspective by Dornelas and Daskalova). However, they found that freshwater insect populations have increased overall, perhaps owing to clean water efforts and climate change. Patterns of variation suggest that local-scale drivers are likely responsible for many changes in population trends, providing hope for directed conservation actions. Science, this issue p. 417; see also p. 368 Global changes in insect populations reflect both decline and growth. Recent case studies showing substantial declines of insect abundances have raised alarm, but how widespread such patterns are remains unclear. We compiled data from 166 long-term surveys of insect assemblages across 1676 sites to investigate trends in insect abundances over time. Overall, we found considerable variation in trends even among adjacent sites but an average decline of terrestrial insect abundance by ~9\% per decade and an increase of freshwater insect abundance by ~11\% per decade. Both patterns were largely driven by strong trends in North America and some European regions. We found some associations with potential drivers (e.g., land-use drivers), and trends in protected areas tended to be weaker. Our findings provide a more nuanced view of spatiotemporal patterns of insect abundance trends than previously suggested.}
+}
 
 @article{willis2019,
   title = {Rarefaction, Alpha Diversity, and Statistics},
@@ -201,4 +460,33 @@ year = {2015}
   doi = {10.3389/fmicb.2019.02407},
   url = {https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2019.02407},
   abstract = {¡p¿Understanding the drivers of diversity is a fundamental question in ecology. Extensive literature discusses different methods for describing diversity and documenting its effects on ecosystem health and function. However, it is widely believed that diversity depends on the intensity of sampling. I discuss a statistical perspective on diversity, framing the diversity of an environment as an unknown parameter, and discussing the bias and variance of plug-in and rarefied estimates. I describe the state of the statistical literature for addressing these problems, focusing on the analysis of microbial diversity. I argue that latent variable models can address issues with variance, but bias corrections need to be utilized as well. I encourage ecologists to use estimates of diversity that account for unobserved species, and to use measurement error models to compare diversity across ecosystems.¡/p¿}
+}
+
+@article{woodbridge_etal2021,
+  author = {Woodbridge, Jessie and Fyfe, Ralph and Smith, David and Pelling, Ruth and de Vareilles, Anne and Batchelor, Robert and Bevan, Andrew and Davies, Althea L.},
+  title = {What drives biodiversity patterns? Using long-term multidisciplinary data to discern centennial-scale change},
+  journal = {Journal of Ecology},
+  volume = {109},
+  number = {3},
+  pages = {1396-1410},
+  keywords = {biodiversity, biogeography and macroecology, global change ecology, insects, land-cover change, landscape ecology, land-use change, palaeoecology and land-use history},
+  doi = {https://doi.org/10.1111/1365-2745.13565},
+  url = {https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2745.13565},
+  eprint = {https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/1365-2745.13565},
+  abstract = {Abstract Biodiversity plays an important role in ecosystem functioning, habitat recovery following disturbance and resilience to global environmental change. Long-term ecological records can be used to explore biodiversity patterns and trends over centennial to multi-millennial time-scales across broad regions. Fossil pollen grains preserved in sediment over millennia reflect palynological richness and diversity, which relates to changes in landscape diversity. Other long-term environmental data, such as fossil insects, palaeoclimate and archaeologically inferred palaeodemographic (population) data, hold potential to address questions about the drivers and consequences of diversity change when combined with fossil pollen records. This study tests a model of Holocene palynological diversity change through a synthesis of pollen and insect records from across the British Isles along with palaeodemographic trends and palaeoclimate records. We demonstrate relationships between human population change, insect faunal group turnover, palynological diversity and climate trends through the Holocene. Notable increases in population at the start of the British Neolithic (~6,000 calendar years before present [bp]) and Bronze Age (~4,200 bp) coincided with the loss of forests, increased agricultural activity and changes in insect faunal groups to species associated with human land use. Pollen diversity and evenness increased, most notably since the Bronze Age, as landscapes became more open and heterogeneous. However, regionally distinctive patterns are also evident within the context of these broad-scale trends. Palynological diversity is correlated with population while diversity and population are correlated with some climate datasets during certain time periods (e.g. Greenland temperature in the mid-late Holocene). Synthesis. This study has demonstrated that early human societies contributed to shaping palynological diversity patterns over millennia within the context of broader climatic influences upon vegetation. The connections between population and palynological diversity become increasingly significant in the later Holocene, implying intensifying impacts of human activity, which may override climatic effects. Patterns of palynological diversity trends are regionally variable and do not always follow expected trajectories. To fully understand the long-term drivers of biodiversity change on regionally relevant ecological and management scales, future research needs to focus on amalgamating diverse data types, along with multi-community efforts to harmonise data across broad regions.},
+  year = {2021}
+}
+
+@article{xing_fayle2021,
+  title = {The rise of ecological network meta-analyses: Problems and prospects},
+  journal = {Global Ecology and Conservation},
+  volume = {30},
+  pages = {e01805},
+  year = {2021},
+  issn = {2351-9894},
+  doi = {https://doi.org/10.1016/j.gecco.2021.e01805},
+  url = {https://www.sciencedirect.com/science/article/pii/S2351989421003553},
+  author = {Shuang Xing and Tom M. Fayle},
+  keywords = {Meta-analyses, Ecological network, Species interaction, Latitude, Environmental gradients, Standardization},
+  abstract = {Investigating ecological networks can help us to understand how ecosystems respond to environmental changes. The increasing number of ecological network studies has facilitated the emergence of a body of meta-analyses that aims to generalize geographical patterns of ecological interactions. Here we summarize the status, potential shortcomings, and challenges in meta-analyses of ecological networks. We emphasize the importance of this approach and how it can be developed in the future. This ongoing ecological network meta-analytical approach will continue to generate important insights into existing patterns in global ecological networks and enhance our knowledge of future global change impacts on ecosystems.}
 }
