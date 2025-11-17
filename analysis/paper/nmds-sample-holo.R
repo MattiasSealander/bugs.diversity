@@ -6,7 +6,7 @@
 
 pacman::p_load(
   cowplot, data.table, vegan, ggh4x, ggplot2,
-  ggsci, ggrepel, tidyverse, here
+  ggsci, ggnewscale, tidyverse, here
 )
 
 # ---- 1. Load fossil insect data ----
@@ -36,7 +36,8 @@ bugs <- bugs %>%
 bugs <- bugs %>%
   mutate(region = case_when(
     between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British Isles",
-    between(latitude, 46.2, 54.2) & between(longitude, -4.8, 8.8) & !(between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8)) ~ "Western Europe",
+    between(latitude, 46.2, 54.2) & between(longitude, -4.8, 8.8) &
+      !(between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8)) ~ "Western Europe",
     country == "France" & latitude < 46.2 ~ "Southern France",
     TRUE ~ NA_character_
   )) %>%
@@ -81,26 +82,28 @@ mds_points <- as.data.frame(scores(mds, display = "sites")) %>%
   rownames_to_column("sample_id") %>%
   left_join(meta, by = "sample_id")
 
-# ---- 1. Create shape variable ----
+# ---- 11. Create site_label for plotting ----
+# British Isles grouped, others remain separate
 mds_points <- mds_points %>%
-  mutate(
-    shape_group = case_when(
-      region %in% c("Western Europe", "Southern France") ~ site,
-      TRUE ~ "British Isles"  # all British sites share one symbol
-    )
-  )
+  mutate(site_label = if_else(region == "British Isles", "British Isles", site))
 
-# ---- 11. PERMANOVA ----
+# Define factor levels: British Isles first, then Western Europe, then Southern France
+site_levels <- c(
+  "British Isles",
+  mds_points %>% filter(region == "Western Europe") %>% distinct(site_label) %>% pull(site_label),
+  mds_points %>% filter(region == "Southern France") %>% distinct(site_label) %>% pull(site_label)
+)
+mds_points$site_label <- factor(mds_points$site_label, levels = site_levels)
+
+# ---- 12. PERMANOVA ----
 permanova_res <- adonis2(Y_rel ~ region, data = meta, method = "bray", permutations = 999)
 print(permanova_res)
 
-# ---- 12. Check homogeneity of dispersion ----
+# ---- 13. Check homogeneity of dispersion ----
 bd <- betadisper(dist_mat, meta$region)
 anova_res <- anova(bd)
 
-# ==============================================================
-# 13. Convex hulls (2D NMDS1–NMDS2)
-# ==============================================================
+# ---- 14. Convex hulls ----
 get_hull <- function(df, group_col, x_col = "NMDS1", y_col = "NMDS2") {
   group_sym <- rlang::sym(group_col)
   df %>%
@@ -117,7 +120,7 @@ get_hull <- function(df, group_col, x_col = "NMDS1", y_col = "NMDS2") {
 
 hull_data <- get_hull(mds_points, "region", "NMDS1", "NMDS2")
 
-# ---- 14. subtitle ----
+# ---- 15. Subtitle ----
 subtitle_text <- paste0(
   "Stress = ", round(mds$stress, 3),
   "; PERMANOVA F = ", round(permanova_res$F[1], 2),
@@ -125,60 +128,142 @@ subtitle_text <- paste0(
   "; Anova F = ", round(anova_res$F[1], 2),
   ", p = ", round(anova_res$`Pr(>F)`[1])
 )
-
-
-# ==============================================================
-# 14. Shape mapping: sites for Western/Southern Europe only
-# ==============================================================
-unique_sites <- unique(mds_points$site[mds_points$region %in% c("Western Europe", "Southern France")])
-shape_values <- setNames(
-  c(0, 8, 2, 3, 4, 5, 6, 7, 10, 21),
-  unique_sites
+# ---- 16. Define fills/colors/shapes ----
+region_hull_fills <- c(
+  "British Isles"   = "#2166AC44",
+  "Western Europe"  = "#B2182B44",
+  "Southern France" = "#4DAF4A44"
 )
-shape_values <- c(shape_values, "British Isles" = 21)  # circle
 
-# Assign shape group (either site or region)
+region_point_colors <- c(
+  "British Isles"   = "#08306B",
+  "Western Europe"  = "#B2182B",
+  "Southern France" = "#00441B"
+)
+
+# ---- 17. Safe shape palette (fillable 21–25) ----
+safe_shapes <- c(21, 22, 23, 24, 25)
+
+# ---- 18. Assign shapes by region ----
+# Southern France unique filled shapes
+southern_sites <- mds_points %>%
+  filter(region == "Southern France") %>%
+  distinct(site) %>%
+  arrange(site) %>%
+  pull(site)
+
+southern_shapes <- setNames(rep(safe_shapes, length.out = length(southern_sites)), southern_sites)
+
+# Western Europe unique outline shapes
+western_sites <- mds_points %>%
+  filter(region == "Western Europe") %>%
+  distinct(site) %>%
+  arrange(site) %>%
+  pull(site)
+
+western_shapes <- setNames(rep(safe_shapes, length.out = length(western_sites)), western_sites)
+
+# ---- 19. Assign shape_final, fill_final, color_final ----
 mds_points <- mds_points %>%
-  mutate(shape_group = ifelse(region == "British Isles", "British Isles", site))
+  mutate(
+    shape_final = case_when(
+      region == "British Isles"   ~ 21L,  # filled circle
+      region == "Southern France" ~ as.integer(southern_shapes[site]),
+      region == "Western Europe"  ~ as.integer(western_shapes[site]),
+      TRUE                        ~ 16L
+    ),
+    fill_final = case_when(
+      region == "British Isles"   ~ "#08306B",
+      region == "Southern France" ~ "#A6D96A",
+      TRUE ~ NA_character_
+    ),
+    color_final = case_when(
+      region == "Western Europe"  ~ "#B2182B",
+      region == "British Isles"   ~ "black",
+      region == "Southern France" ~ "#00441B",
+      TRUE ~ "black"
+    )
+  ) %>%
+  mutate(region = factor(region, levels = c("British Isles", "Southern France", "Western Europe"))) %>%
+  arrange(region)
 
+# ---- 20. Convex hulls ----
+hull_data <- get_hull(mds_points, "region", "NMDS1", "NMDS2")
 
-# ==============================================================
-# 15. Plot NMDS
-# ==============================================================
-ggplot(mds_points, aes(x = NMDS1, y = NMDS2)) +
+hull_british <- hull_data %>% filter(region == "British Isles")
+hull_western <- hull_data %>% filter(region == "Western Europe")
+hull_southern <- hull_data %>% filter(region == "Southern France")
+
+# ---- 21. Legend shape mapping ----
+shape_values <- mds_points %>%
+  distinct(site_label, shape_final) %>%
+  arrange(factor(site_label, levels = unique(mds_points$site_label))) %>%
+  deframe()
+
+# ---- 22. Plot NMDS ----
+# 2️⃣ Build plot
+ggplot() +
+  # Hulls (same order as above)
   geom_polygon(
-    data = hull_data,
-    aes(x = NMDS1, y = NMDS2, fill = region, group = region),
-    alpha = 0.3, color = NA
+    data = hull_british,
+    aes(x = NMDS1, y = NMDS2, group = region),
+    fill = region_hull_fills["British Isles"], alpha = 0.4
   ) +
+  geom_polygon(
+    data = hull_southern,
+    aes(x = NMDS1, y = NMDS2, group = region),
+    fill = region_hull_fills["Southern France"], alpha = 0.4
+  ) +
+  geom_polygon(
+    data = hull_western,
+    aes(x = NMDS1, y = NMDS2, group = region),
+    fill = region_hull_fills["Western Europe"], alpha = 0.4
+  ) +
+  ggnewscale::new_scale_fill() +
+
+  # 3️⃣ Points (same shapes/fills/colors as before, just drawn in new order)
   geom_point(
-    aes(color = region, shape = shape_group),
-    size = 3, stroke = 1
+    data = mds_points,
+    aes(
+      x = NMDS1, y = NMDS2,
+      shape = site_label,
+      fill = fill_final,
+      color = color_final
+    ),
+    size = 3.8, stroke = 1.2
   ) +
-  #geom_text_repel(aes(label = sample_id), size = 3, max.overlaps = 15) +
-  scale_color_manual(values = c(
-    "British Isles" = "#2166AC",
-    "Western Europe" = "#B2182B",
-    "Southern France" = "#4DAF4A"
-  )) +
-  scale_fill_manual(values = c(
-    "British Isles" = "#2166AC",
-    "Western Europe" = "#B2182B",
-    "Southern France" = "#4DAF4A"
-  )) +
-  scale_shape_manual(values = shape_values) +
+
+  # 4️⃣ Keep the shape mapping but hide it from the legend
+  scale_shape_manual(
+    values = shape_values,
+    guide = "none"  # removes site legend
+  ) +
+  scale_fill_identity(guide = "none") +
+  scale_color_identity(guide = "none") +
+
+  # 5️⃣ Add a clean region-color legend
+  ggnewscale::new_scale_fill() +
+  geom_point(
+    data = distinct(mds_points, region),
+    aes(x = Inf, y = Inf, fill = region),
+    shape = 21, size = 5
+  ) +
+  scale_fill_manual(
+    name = "Region",
+    values = c(
+      "British Isles"   = alpha("#08306B", .5),
+      "Western Europe"  = alpha("#B2182B", .5),
+      "Southern France" = alpha("#00441B", .5)
+    )
+  ) +
+
   theme_minimal(base_size = 14) +
   labs(
     title = "NMDS of fossil insect communities by region (sample-level)",
     subtitle = subtitle_text,
-    x = "NMDS1", y = "NMDS2",
-    color = "Region",
-    fill = "Region"
+    x = "NMDS1", y = "NMDS2"
   ) +
   theme(
     legend.position = "bottom",
     plot.title = element_text(face = "bold", size = 16)
   )
-
-
-message("✅ NMDS completed and sample-level regional comparison plot saved.")
