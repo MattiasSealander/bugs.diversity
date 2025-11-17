@@ -48,23 +48,24 @@ rects <- data.frame(
 
 # ---- 3. Prepare time intervals ----
 # Filter to focus on samples from natural contexts (Stratigraphic sequence) and Late Glacial - Holocene period
-time.mat <- bugs %>%
+time_mat <- bugs %>%
   select(country, sample, site, sample_group, age_older, age_younger, context) %>%
   mutate(age_range = age_older - age_younger) %>%
   filter(
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
     age_range <= 2000,
     country != "Greenland"
   ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   distinct() %>%
-  select(-age_range, -context) %>%
+  select(-age_range, -context, -mid_age) %>%
   mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
   column_to_rownames("sample") %>%
   select(-country, -site, -sample_group) %>%
   dplyr::rename(start = age_younger, end = age_older)
+
 
 
 # ---- 4. Define 500-year temporal bins ----
@@ -77,7 +78,7 @@ range <- data.frame(
 # ---- 5. Identify sample–bin overlaps ----
 # Samples overlapping each time bin are assigned accordingly.
 intersection <- findOverlaps(
-  query = do.call(IRanges, time.mat),
+  query = do.call(IRanges, time_mat),
   subject = do.call(IRanges, range),
   type = "any"
 )
@@ -86,7 +87,7 @@ intersection <- findOverlaps(
 # ---- 6. Merge sample and bin info ----
 # Combine sample information with corresponding time bins.
 hits <- data.frame(
-  time.mat[queryHits(intersection),],
+  time_mat[queryHits(intersection),],
   range[subjectHits(intersection),]
 ) %>%
   as_tibble(rownames = "sample") %>%

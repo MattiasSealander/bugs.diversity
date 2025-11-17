@@ -9,7 +9,7 @@
 ############################################################
 
 # ---- Load packages ----
-pacman::p_load(tidyverse, IRanges, cowplot, here, data.table)
+pacman::p_load(tidyverse, IRanges, cowplot, here, data.table, viridis)
 
 # ==============================================================
 # 1. Import species occurrence data
@@ -31,21 +31,23 @@ bugs <- fread(
 nat <- bugs %>%
   mutate(
     region = case_when(
-      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles")) %>%
+      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles"
+    ),
+    age_range = age_older - age_younger
+  ) %>%
   filter(
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
-    (age_older - age_younger) <= 2000,
+    age_range <= 2000,
     country != "Greenland"
   ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   distinct(sample, sample_group, site, age_older, age_younger, region) %>%
   mutate(
     start = age_younger,
     end   = age_older
   )
-
 
 # ==============================================================
 # 3. Define 500-year temporal bins
@@ -341,7 +343,7 @@ fig_final <- plot_grid(
 # 12. Save figure
 # ==============================================================
 ggsave(
-  filename = "001-sample-site-abundance-summary.jpg",
+  filename = "001-sample-site-abundance-summary-rerun.jpg",
   plot = fig_final,
   path = here("analysis", "figures"),
   units = "cm",

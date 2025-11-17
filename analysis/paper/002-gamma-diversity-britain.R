@@ -41,20 +41,19 @@ rects <- data.frame(
 # ==============================================================
 # 3. Filter and prepare temporal range data
 # ==============================================================
-
-time.mat <- bugs %>%
+time_mat <- bugs %>%
   select(country, sample, site, sample_group, age_older, age_younger, context) %>%
   mutate(age_range = age_older - age_younger) %>%
   filter(
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
     age_range <= 2000,
     country != "Greenland"
   ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   distinct() %>%
-  select(-age_range, -context) %>%
+  select(-age_range, -context, -mid_age) %>%
   mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
   column_to_rownames("sample") %>%
   select(-country, -site, -sample_group) %>%
@@ -74,7 +73,7 @@ range <- data.frame(
 # ==============================================================
 
 intersection <- findOverlaps(
-  query = do.call(IRanges, time.mat),
+  query = do.call(IRanges, time_mat),
   subject = do.call(IRanges, range),
   type = "any"
 )
@@ -83,7 +82,7 @@ intersection <- findOverlaps(
 # 6. Merge sample metadata with bin assignments
 # ==============================================================
 
-hits <- data.frame(time.mat[queryHits(intersection),], range[subjectHits(intersection),]) %>%
+hits <- data.frame(time_mat[queryHits(intersection),], range[subjectHits(intersection),]) %>%
   as_tibble(rownames = "sample") %>%
   separate(sample, into = c("sample", "sample_group", "site"), sep = "@") %>%
   inner_join(bugs, by = c("sample", "sample_group")) %>%
@@ -323,7 +322,7 @@ generate_gammaDiversity_plots <-
       )
 
     safe_name <- gsub("[^A-Za-z0-9_]", "_", region_name)
-    ggsave(filename = paste0("004-gamma-diversity-raw-srs-", safe_name, ".jpg"),
+    ggsave(filename = paste0("004-gamma-diversity-raw-srs", safe_name, ".jpg"),
            plot = p, path = output_dir, width = 3300, height = 4200, units = "px", dpi = 300)
 
     plot_list[[region_name]] <- p

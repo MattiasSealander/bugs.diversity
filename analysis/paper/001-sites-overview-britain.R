@@ -12,7 +12,7 @@
 
 # ---- Load packages ----
 # pacman::p_load() loads the packages and installs them if missing
-pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggrepel, spatstat, rnaturalearth, rnaturalearthdata)
+pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggrepel, spatstat, rnaturalearth, rnaturalearthdata, viridis)
 
 
 # ---- 1. Import site and species data ----
@@ -41,19 +41,23 @@ gbbox <-
 # ---- 3. Filter and categorize sites ----
 # Filter to Stratigraphic sequences (natural deposits) within age limits, exclude temporary samples (BugsPresence) and Greenland
 sites <- bugs %>%
-  filter(context == "Stratigraphic sequence",
-         sample != "BugsPresence",
-         between(age_older, -500, 16000),
-         between(age_younger, -500, 16000),
-         (age_older - age_younger) <= 2000,
-         country != "Greenland") %>%
+  mutate(
+    age_range = age_older - age_younger
+  ) %>%
+  filter(
+    context == "Stratigraphic sequence",
+    sample != "BugsPresence",
+    age_range <= 2000,
+    country != "Greenland"
+  ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   distinct(site, age_older, age_younger, latitude, longitude) %>%
   # Assign sites to regions based on latitude/longitude
   mutate(region = case_when(
     between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
     TRUE ~ ""
   ))
-
 
 # ---- 4. Convert sites to sf objects ----
 # Split sites into British/Irish Isles vs other regions

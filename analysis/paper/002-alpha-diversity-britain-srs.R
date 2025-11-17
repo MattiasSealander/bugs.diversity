@@ -58,13 +58,13 @@ time_mat <- bugs %>%
   filter(
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
     age_range <= 2000,
     country != "Greenland"
   ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   distinct() %>%
-  select(-age_range, -context) %>%
+  select(-age_range, -context, -mid_age) %>%
   mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
   column_to_rownames("sample") %>%
   select(-country, -site, -sample_group) %>%
@@ -329,7 +329,7 @@ generate_alphaDiversity_srs <- function(Listdf, rects,
 
   # ---- Save plot ----
   ggsave(
-    filename = "002-alpha-diversity-britain-srs.jpg",
+    filename = "002-alpha-diversity-britain-srs-rerun.jpg",
     plot = p,
     path = output_dir,
     width = 3300, height = 4200, units = "px", dpi = 300

@@ -24,25 +24,23 @@ bugs <-
   encoding = "UTF-8"
 )
 
-bugs_filtered <-
-  bugs %>%
-  mutate(age_range = age_older - age_younger) %>%
+bugs_filtered <- bugs %>%
   mutate(
-    region =
-      case_when(
-        between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
-        TRUE ~ ""
-      )
+    age_range = age_older - age_younger,
+    region = case_when(
+      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+      TRUE ~ ""
+    )
   ) %>%
   filter(
     region == "British/Irish Isles",
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, age_min, age_max),
-    between(age_younger, age_min, age_max),
     age_range <= 2000,
-    country != "Greenland",
-  )
+    country != "Greenland"
+  ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, age_min, age_max))
 
 # ---- 2. Sample metadata ----
 sample_meta <-
@@ -171,7 +169,7 @@ fig <- ggplot() +
   )
 
 # ---- 10. Save figure ----
-ggsave("004-rank-abundance-curves-britain.jpg",
+ggsave("004-rank-abundance-curves-britain-rerun.jpg",
        fig,
        device = "jpg",
        here::here("analysis", "figures"),
