@@ -19,7 +19,7 @@ bin_width <- 500
 # ---- 1. Read and filter data ----
 bugs <-
   fread(
-  here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"),
+  here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
   encoding = "UTF-8"
 )
