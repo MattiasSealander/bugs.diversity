@@ -7,22 +7,28 @@ pacman::p_load(tidyverse, data.table, IRanges, sf, rnaturalearth, rnaturalearthd
 
 # ---- 1. Load fossil insect data ----
 bugs <- fread(
-  here::here("analysis" "data" "raw_data" "bugs_europe_extraction_samples_20250612.csv"),
+  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
   encoding = "UTF-8"
 )
 
 # ---- 2. Filter to British/Irish Isles and natural context ----
 samples <- bugs %>%
+  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context) %>%
+  mutate(age_range = age_older - age_younger,
+         region = case_when(
+           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+           TRUE ~ "")
+         ) %>%
   filter(
+    region == "British/Irish Isles",
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
-    (age_older - age_younger) <= 2000,
-    between(latitude, 49.8, 62.6),
-    between(longitude, -12.6, 1.8)
+    age_range <= 2000,
+    country != "Greenland"
   ) %>%
+  mutate(mid_age = (age_older + age_younger) / 2) %>%
+  filter(between(mid_age, -500, 16000)) %>%
   mutate(sample_id = paste(sample, sample_group, site, sep = "|")) %>%
   distinct(sample, sample_group, site, latitude, longitude, age_older, age_younger, sample_id)
 
