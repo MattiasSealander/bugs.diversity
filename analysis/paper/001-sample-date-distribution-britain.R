@@ -1,107 +1,115 @@
-############################################################
-# Purpose: Summarize fossil insect data for Europe during
+# ==============================================================
+# Purpose: Summarize fossil insect data for Europe and UK/Ireland during
 #          the Late Glacial - Holocene period.
 #
-# Methods:
-#   1. Filter fossil insect data to period and region of study
-#   2. Summarize sites, samples and total abundance of insects
-#   3. Plot summarized data over time
-############################################################
-
-# ---- 0. Load required packages ----
-# pacman::p_load() loads the packages and installs them if missing
-pacman::p_load(tidyverse, IRanges, cowplot, here, data.table, viridis)
-
+# Workflow:
+#   1. Load fossil insect occurrence data.
+#   2. Filter samples by region, context, and age constraints.
+#   3. Assign samples to 500-year temporal bins using IRanges.
+#   4. Summarise data at site, sample and abundance level for each bin
+#   5. Generate and combine plots for A figure
+#   6. Summarise sample age ranges
+#   7. Generate age range plot for B figure
+#   3. Combine plots using cowplot
+#
+# Key Notes:
+#   - Each unique sample is identified by the concatenation of sample+sample_group+site
+#   - Sample age ranges are based on the harmonised dates from SEAD
+#
+# Output:
+#   - Plot: "001-sample-site-abundance-summary.jpg"
 # ==============================================================
-# 1. Import species occurrence data
-# --------------------------------------------------------------
-# The raw dataset includes sample-level fossil insect occurrences across Europe from SEAD.
-# ==============================================================
-bugs <- fread(
-  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
-  na.strings = c("", "NA", "NULL"),
-  encoding = "UTF-8"
+
+# ---- 0. Load packages ----
+pacman::p_load(
+  data.table, tidyverse, cowplot, here, IRanges, viridis
 )
 
 # ==============================================================
-# 2. Filter and prepare data
-# --------------------------------------------------------------
-# Filter for samples from natural contexts (Stratigraphic sequences) and valid age ranges.
-# Samples are identified by concatenation of site, sample_group, and sample.
+# 1. Import species occurrence data
 # ==============================================================
-nat <- bugs %>%
-  mutate(
-    region = case_when(
-      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles"
-    ),
-    age_range = age_older - age_younger
-  ) %>%
-  filter(
-    context == "Stratigraphic sequence",
-    sample != "BugsPresence",
-    age_range <= 2000,
-    country != "Greenland"
-  ) %>%
-  mutate(mid_age = (age_older + age_younger) / 2) %>%
-  filter(between(mid_age, -500, 16000)) %>%
-  distinct(sample, sample_group, site, age_older, age_younger, region) %>%
-  mutate(
-    start = age_younger,
-    end   = age_older
-  )
+bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv")) %>%
+  mutate(sample_id = paste(sample, sample_group, site, sep = "@")) %>%
+  as_tibble()
 
 # ==============================================================
-# 3. Define 500-year temporal bins
-# --------------------------------------------------------------
-# Bins are used for assigning samples to time intervals.
+# 2. Define temporal periods (TM1–TM8) afte Pilotto et al. (2022)
 # ==============================================================
-age_bins <- tibble(
+rects <- tibble(
+  ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
+  yend   = c(16000, 12000, 9500, 8000, 6500, 4500, 4000, 3500),
+  col    = factor(c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"),
+                  levels = c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"))
+)
+
+# ==============================================================
+# 3. Filter and prepare temporal range data
+# ==============================================================
+time_mat <- bugs %>%
+  select(country, latitude, longitude, sample_id, sample, sample_group, site, age_older, age_younger, context) %>%
+  mutate(age_range = age_older - age_younger,
+         mid_age = (age_older + age_younger) / 2,
+         region = case_when(
+           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+           TRUE ~ "Europe")
+  ) %>%
+  filter(context == "Stratigraphic sequence",
+         sample != "BugsPresence",
+         age_range <= 2000,
+         between(mid_age, -500, 16000)) %>%
+  distinct() %>%
+  select(region, site, sample_group, sample_id, age_younger, age_older) %>%
+  dplyr::rename(start = age_younger, end = age_older)
+
+# Fix reversed ranges
+if (any(time_mat$start > time_mat$end)) {
+  time_mat <- time_mat %>%
+    mutate(start = pmin(start, end), end = pmax(start, end))
+}
+
+# ==============================================================
+# 4. Define 500-year temporal bins
+# ==============================================================
+range <- tibble(
   start = c(-500, seq(1, 15501, by = 500)),
   end   = seq(0, 16000, by = 500)
 )
 
+# ==============================================================
+# 5. Identify overlapping samples with time bins
+# ==============================================================
+query <- IRanges(start = time_mat$start, end = time_mat$end)
+subject <- IRanges(start = range$start, end = range$end)
+
+intersection <- findOverlaps(query, subject, type = "any")
+if (length(intersection) == 0) stop("No overlaps found. Check age ranges and bin definitions.")
 
 # ==============================================================
-# 4. Identify overlapping samples with time bins
-# --------------------------------------------------------------
-# Uses IRanges to assign each sample to all 500-year bins that overlap its age range.
+# 6. Merge sample metadata with bin assignments
 # ==============================================================
-nat_ranges <- IRanges(start = nat$start, end = nat$end)
-bin_ranges <- IRanges(start = age_bins$start, end = age_bins$end)
-
-# Find overlaps between sample age ranges and bins
-overlaps <- findOverlaps(nat_ranges, bin_ranges, type = "any")
-
-
-# ==============================================================
-# 5. Build overlap hits tibble
-# --------------------------------------------------------------
-# Produces a table linking each sample to its temporal bin.
-# ==============================================================
-overlap_hits <- tibble(
-  sample  = nat$sample[queryHits(overlaps)],
-  sample_group = nat$sample_group[queryHits(overlaps)],
-  site    = nat$site[queryHits(overlaps)],
-  bin_start = age_bins$start[subjectHits(overlaps)],
-  bin_end   = age_bins$end[subjectHits(overlaps)],
-  region = nat$region[queryHits(overlaps)]
+hits <- tibble(
+  sample_id = time_mat$sample_id[queryHits(intersection)],
+  sample_group = time_mat$sample_group[queryHits(intersection)],
+  site = time_mat$site[queryHits(intersection)],
+  region = time_mat$region[queryHits(intersection)],
+  bin_start = range$start[subjectHits(intersection)],
+  bin_end   = range$end[subjectHits(intersection)]
 )
 
-
 # ==============================================================
-# 6. Summarise hits
+# 7. Summarise hits
 # --------------------------------------------------------------
 # Summarises the nr. of sites, samples and total abundance for each 500-bin.
 # Results are calculated for Europe and the British/Irish Isles.
 # ==============================================================
 
-# 6a. Sites per bin
+# 7a. Sites per bin
 # Europe
-sites_all <- overlap_hits %>%
+sites_all <- hits %>%
   distinct(bin_end, site) %>%
   count(bin_end, name = "sites_all")
 # British/Irish Isles
-sites_brit <- overlap_hits %>%
+sites_brit <- hits %>%
   filter(region == "British/Irish Isles") %>%
   distinct(bin_end, site) %>%
   count(bin_end, name = "sites_brit")
@@ -112,17 +120,15 @@ sites_summary <- full_join(
   replace_na(list(sites_all = 0L, sites_brit = 0L)) %>%
   arrange(desc(bin_end))
 
-# 6b. Samples per bin (unique sample identity = sample + sample_group + site)
+# 7b. Samples per bin (sample_id = sample + sample_group + site)
 # Europe
-samples_all <- overlap_hits %>%
-  distinct(bin_end, sample, sample_group, site) %>%
-  mutate(sample_uid = interaction(sample, sample_group, site)) %>%
+samples_all <- hits %>%
+  distinct(bin_end, sample_id) %>%
   count(bin_end, name = "samples_all")
 # British/Irish Isles
-samples_brit <- overlap_hits %>%
+samples_brit <- hits %>%
   filter(region == "British/Irish Isles") %>%
-  distinct(bin_end, sample, sample_group, site) %>%
-  mutate(sample_uid = interaction(sample, sample_group, site)) %>%
+  distinct(bin_end, sample_id) %>%
   count(bin_end, name = "samples_brit")
 # Combined
 samples_summary <- full_join(
@@ -131,18 +137,18 @@ samples_summary <- full_join(
   replace_na(list(samples_all = 0L, samples_brit = 0L)) %>%
   arrange(desc(bin_end))
 
-# 6c. Abundance per bin
+# 7c. Abundance per bin
 # Europe
-abundance_all <- overlap_hits %>%
-  left_join(bugs, by = c("sample", "sample_group", "site"), relationship = "many-to-many") %>%
-  distinct(bin_end, site, sample_group, sample, taxon, abundance) %>%
+abundance_all <- hits %>%
+  left_join(bugs, by = c("sample_id"), relationship = "many-to-many") %>%
+  distinct(bin_end, sample_id, taxon, abundance) %>%
   group_by(bin_end) %>%
   summarise(abundance_all = sum(abundance, na.rm = TRUE), .groups = "drop")
 # British/Irish Isles
-abundance_brit <- overlap_hits %>%
+abundance_brit <- hits %>%
   filter(region == "British/Irish Isles") %>%
-  left_join(bugs, by = c("sample", "sample_group", "site"), relationship = "many-to-many") %>%
-  distinct(bin_end, site, sample_group, sample, taxon, abundance) %>%
+  left_join(bugs, by = c("sample_id"), relationship = "many-to-many") %>%
+  distinct(bin_end, sample_id, taxon, abundance) %>%
   group_by(bin_end) %>%
   summarise(abundance_brit = sum(abundance, na.rm = TRUE), .groups = "drop")
 # Combined
@@ -150,7 +156,7 @@ abundance_summary <- full_join(abundance_all, abundance_brit, by = "bin_end") %>
   replace_na(list(abundance_all = 0L, abundance_brit = 0L)) %>%
   arrange(desc(bin_end))
 
-# 6d. Combine to single tidy table
+# 7d. Combine to single tidy table
 summary_combined <- sites_summary %>%
   left_join(samples_summary, by = "bin_end") %>%
   left_join(abundance_summary, by = "bin_end") %>%
@@ -182,7 +188,7 @@ summary_long <- summary_combined %>%
   )
 
 # ==============================================================
-# 7. Plotting function
+# 8. Plotting function
 # --------------------------------------------------------------
 # Create a bar plot for a given metric (Sites, Samples, or Abundance)
 # Uses the summary_long table, which includes both 'All_Europe' and 'British/Irish Isles'
@@ -244,7 +250,7 @@ plot_metric_overlap <- function(data, metric_name, show_x = TRUE, text_x = TRUE)
   return(p)
 }
 
-# ---- 7b. Generate legend plot ----
+# ---- 8b. Generate legend plot ----
 legend_plot <- ggplot(summary_long %>% filter(Metric == "Sites"), aes(x = bin_end, y = Value, fill = Scope)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(
@@ -264,14 +270,14 @@ legend <- get_legend(legend_plot)
 
 
 # ==============================================================
-# 8. Generate individual metric plots
+# 9. Generate individual metric plots
 # ==============================================================
 fig.sites <- plot_metric_overlap(summary_long, "Sites", show_x = FALSE, text_x = FALSE)
 fig.samples <- plot_metric_overlap(summary_long, "Samples", show_x = FALSE, text_x = FALSE)
 fig.abundance <- plot_metric_overlap(summary_long, "Abundance", show_x = TRUE, text_x = TRUE)
 
 
-# ---- 8b. Combine plots with legend ----
+# ---- 9b. Combine plots with legend ----
 fig_combined <- plot_grid(
   fig.sites, fig.samples, fig.abundance,
   ncol = 1, align = "v",
@@ -289,25 +295,24 @@ fig_with_legend <- plot_grid(
 
 
 # ==============================================================
-# 9. Filter and prepare sample age ranges
+# 10. Filter and prepare sample age ranges
 # --------------------------------------------------------------
 # Filter samples from UK and Ireland and arrange in order of youngest to oldest
 # Add row numbers for figure axis labels.
 # ==============================================================
-age_ranges <- nat %>%
+age_ranges <- time_mat %>%
   filter(region == "British/Irish Isles") %>%
-  distinct(sample, sample_group, site, age_older, age_younger) %>%
-  mutate(sample_uid = interaction(site, sample_group, sample, sep = "|")) %>%
-  arrange((age_younger)) %>%  # order youngest to oldest
+  distinct(sample_id, end, start) %>%
+  arrange((start)) %>%  # order youngest to oldest
   mutate(sample_row = row_number())  # row number for y-axis
 
 
 # ==============================================================
-# 10. Plot sample age ranges
+# 11. Plot sample age ranges
 # ==============================================================
 fig_time <-
   ggplot(age_ranges, aes(y = sample_row)) +
-  geom_segment(aes(x = age_older, xend = age_younger, y = sample_row, yend = sample_row, color = age_older),
+  geom_segment(aes(x = end, xend = start, y = sample_row, yend = sample_row, color = end),
                linewidth = 3) +
   scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
   scale_color_viridis(
@@ -329,7 +334,7 @@ fig_time <-
 
 
 # ==============================================================
-# 11. Combine final plot
+# 12. Combine final plot
 # ==============================================================
 fig_final <- plot_grid(
   fig_with_legend,
@@ -341,10 +346,10 @@ fig_final <- plot_grid(
 
 
 # ==============================================================
-# 12. Save figure
+# 13. Save figure
 # ==============================================================
 ggsave(
-  filename = "001-sample-site-abundance-summary-rerun.jpg",
+  filename = "001-sample-site-abundance-summary.jpg",
   plot = fig_final,
   path = here("analysis", "figures"),
   units = "cm",

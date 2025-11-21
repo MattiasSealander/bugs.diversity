@@ -1,29 +1,33 @@
-############################################################
+# ==============================================================
 # Purpose: Filter and plot fossil insect sites in Europe
 #          sampled from natural deposits and categorize
 #          them by region.
 #
 # Methods:
-#   1. Filter sites from natural deposits and time range
-#   2. Convert to sf objects
-#   3. Plot sites on a map of Europe
-############################################################
+#   1. Load fossil insect occurrence data.
+#   2. Filter sites by region, context, and age constraints.
+#   3. Import country vectors
+#   4. Convert to sf objects
+#   5. Plot sites on a map of Europe with UK/Ireland as inset map
+#
+# Key Notes:
+#   - ggdraw is used to add UK/Ireland map as inset
+#   - Harmonised sample age ranges are visualised using viridis
+#
+# Output:
+#   - Plot: "001-sites-overview-britain.jpg"
+# ==============================================================
 
-# ---- 0. Load required packages ----
-# pacman::p_load() loads the packages and installs them if missing
-pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggrepel, spatstat,
-               rnaturalearth, rnaturalearthdata, viridis)
+# ---- 0. Load packages ----
+pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggrepel, spatstat, rnaturalearth, rnaturalearthdata, viridis
+               )
 
 # ==============================================================
 # 1. Import species occurrence data
-# --------------------------------------------------------------
-# The raw dataset includes sample-level fossil insect occurrences across Europe from SEAD.
 # ==============================================================
-bugs <- fread(
-  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
-  na.strings = c("", "NA", "NULL"),
-  encoding = "UTF-8"
-)
+bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv")) %>%
+  mutate(sample_id = paste(sample, sample_group, site, sep = "@")) %>%
+  as_tibble()
 
 # ==============================================================
 # 2. Prepare spatial data
