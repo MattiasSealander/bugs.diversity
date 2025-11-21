@@ -1,97 +1,107 @@
-############################################################
-# Purpose: Summarize fossil insect data for Europe during
-#          the Late Glacial - Holocene period.
+# ==============================================================
+# Script: Habitat Reconstruction via Ecocode Analysis
 #
-# Methods:
-#   1. Filter fossil insect data to period and sampling context
-#   2. Bin samples into 500-year time slices
+# Purpose:
+#   Summarise subfossil insect data from the British/Irish Isles
+#   to reconstruct past habitat composition using ecocode classifications.
+#
+# Workflow:
+#   1. Load fossil insect occurrence data.
+#   2. Filter samples by region, context, and age constraints.
+#   3. Assign samples to 500-year temporal bins using IRanges.
 #   3. Normalize using abundance-weighted and non-abundance
 #      (presence-based) methods (Buckland 2007)
 #   4. Plot results and save figure
-############################################################
+#
+# Output:
+#   - Plot: "005-rank-abundance-curves-britain.jpg"
+# ==============================================================
 
-# ---- Load packages ----
+
+# ---- 0. Load packages ----
 pacman::p_load(
   data.table, ggh4x, IRanges, purrr, tidyverse, here
 )
 
-# ---- 1. Import site and taxon data ----
-bugs <- fread(
-  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
-  na.strings = c("", "NA", "NULL"),
-  encoding = "UTF-8"
-)
+# ==============================================================
+# 1. Import species occurrence and taxa habitat reference data
+# ==============================================================
+bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv")) %>%
+  mutate(sample_id = paste(sample, sample_group, site, sep = "@")) %>%
+  as_tibble()
 
-# ---- 2. Import taxa habitat reference data ----
-eco <- fread(
-  here::here("analysis", "data", "raw_data", "sead_ecocodes_20250114.csv"),
-  na.strings = c("", "NA", "NULL"),
-  encoding = "UTF-8"
-)
+eco <- fread(here("analysis", "data", "raw_data", "sead_ecocodes_20250114.csv")) %>%
+  as_tibble()
 
-# ---- 3. Filter and prepare sample metadata ----
+# ==============================================================
+# 2. Filter and prepare temporal range data
+# ==============================================================
 time_mat <- bugs %>%
-  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context) %>%
   mutate(age_range = age_older - age_younger,
+         mid_age = (age_older + age_younger) / 2,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
-         ) %>%
-  filter(
-    region == "British/Irish Isles",
-    context == "Stratigraphic sequence",
-    sample != "BugsPresence",
-    age_range <= 2000,
-    country != "Greenland"
   ) %>%
-  mutate(mid_age = (age_older + age_younger) / 2) %>%
-  filter(between(mid_age, -500, 16000)) %>%
+  filter(region == "British/Irish Isles",
+         context == "Stratigraphic sequence",
+         sample != "BugsPresence",
+         age_range <= 2000,
+         between(mid_age, -500, 16000)) %>%
   distinct() %>%
-  select(-age_range, -context, -mid_age) %>%
-  mutate(sample = paste(sample, sample_group, site, sep = "@")) %>%
-  column_to_rownames("sample") %>%
-  select(age_older, age_younger) %>%
+  select(sample_id, age_younger, age_older) %>%
   dplyr::rename(start = age_younger, end = age_older)
 
-# ---- 4. Define 500-year temporal bins ----
+# Check for reversed ranges
+if (any(time_mat$start > time_mat$end)) {
+  time_mat <- time_mat %>%
+    mutate(start = pmin(start, end), end = pmax(start, end))
+}
+
+
+# ==============================================================
+# 3. Define 500-year temporal bins
+# ==============================================================
 range <- data.frame(
   start = c(-500, seq(1, 15501, by = 500)),
   end   = seq(0, 16000, by = 500)
 )
 
 
-# ---- 5. Identify sample–bin overlaps ----
-# Samples overlapping each time bin are assigned accordingly.
-intersection <- findOverlaps(
-  query = do.call(IRanges, time_mat),
-  subject = do.call(IRanges, range),
-  type = "any"
-)
+# ==============================================================
+# 4. Identify overlapping samples with time bins
+# ==============================================================
+query <- IRanges(start = time_mat$start, end = time_mat$end)
+subject <- IRanges(start = range$start, end = range$end)
+
+intersection <- findOverlaps(query, subject, type = "any")
+if (length(intersection) == 0) stop("No overlaps found. Check age ranges and bin definitions.")
 
 
-# ---- 6. Merge sample and bin info ----
-# Combine sample information with corresponding time bins.
-hits <- data.frame(
-  time_mat[queryHits(intersection),],
-  range[subjectHits(intersection),]
+# ==============================================================
+# 5. Merge sample metadata with bin assignments
+# ==============================================================
+hits <- tibble(
+  sample_id = time_mat$sample_id[queryHits(intersection)],
+  bin_start = range$start[subjectHits(intersection)],
+  bin_end   = range$end[subjectHits(intersection)]
 ) %>%
-  as_tibble(rownames = "sample") %>%
-  separate(sample, into = c("sample", "sample_group", "site"), sep = "@") %>%
-  inner_join(bugs, by = c("sample", "sample_group"), relationship = "many-to-many") %>%
-  select(-start, -end)
+  inner_join(bugs, by = "sample_id", relationship = "many-to-many")
 
-# ---- 7. Merge ecocode classifications ----
+# ==============================================================
+# 6. Merge ecocode classifications
+# ==============================================================
 eco_species <- eco %>%
   filter(ecocode_system == "Bugs") %>%
-  inner_join(hits, by = "taxon") %>%
-  transmute(
-    sample_id = paste(sample, sample_group, site.x, sep = "@"),
-    ecocode, abundance, taxon, bin = end.1
-  ) %>%
-  distinct()
+  inner_join(hits, by = "taxon", relationship = "many-to-many") %>%
+  distinct(ecocode, abundance, taxon, bin_end
+  )
 
-# ---- 8. Helper function: Calculate ecocode reconstruction ----
-
+# ==============================================================
+# 7. Helper function: Calculate habitat reconstruction
+# ==============================================================
+#
 # Calculate Buckland (2007) diversity measures for ecocode-based habitat reconstructions
 #
 # This function computes the four ecological diversity measures described by
@@ -115,6 +125,7 @@ eco_species <- eco %>%
 # Where:
 # S = sample (in this case 500-year bin)
 # C = habitat class (ecocode)
+
 calc_ecocodes <- function(data, bin_col, ecocode_col, taxon_col, abundance_col,
                           method = c("1A","1B","2A","2B")) {
 
@@ -171,14 +182,16 @@ calc_ecocodes <- function(data, bin_col, ecocode_col, taxon_col, abundance_col,
   return(df_out)
 }
 
-# ---- 9. Compute abundance-weighted and presence-based summaries ----
+# ==============================================================
+# 8. Compute abundance-weighted and presence-based summaries
+# ==============================================================
 methods <- c("1B", "2B")
 
 results <- map_df(
   methods,
   ~ calc_ecocodes(
     eco_species,
-    bin_col = bin,
+    bin_col = bin_end,
     ecocode_col = ecocode,
     taxon_col = taxon,
     abundance_col = abundance,
@@ -186,14 +199,35 @@ results <- map_df(
   )
 )
 
-# ---- 10. Filter out bins with fewer than 5 ecocodes ----
+# ==============================================================
+# 9. Filter out bins with fewer than 5 ecocodes
+# ==============================================================
 results_filtered <- results %>%
   dplyr::filter(value > 0) %>%
   dplyr::group_by(bin, method) %>%
   dplyr::filter(n_distinct(ecocode) >= 5) %>%
   dplyr::ungroup()
 
-# ---- 11 Define ecocode order and colors ----
+# Count bins before and after filtering
+bins_before <- n_distinct(results$bin)
+bins_after <- n_distinct(results_filtered$bin)
+bins_dropped <- bins_before - bins_after
+
+message("✅ Habitat reconstruction complete. ",
+        "Bins before filtering: ", bins_before,
+        ", after filtering: ", bins_after,
+        ", dropped: ", bins_dropped, ".")
+
+# Rename facets
+results_filtered$method <- factor(
+  results_filtered$method,
+  levels = c("2B %SumRep","1B %SumRep"),
+  labels = c("Abundance-weighted", "No Abundance")
+)
+
+# ==============================================================
+# 10. Define ecocode order and colors
+# ==============================================================
 ecocode_levels <- c(
   "Aquatics", "Indicators: Running water", "Indicators: Standing water",
   "Open wet habitats", "Wetlands/marshes", "Mould beetles", "Halotolerant",
@@ -212,15 +246,10 @@ colors <- c(
 
 results_filtered$ecocode <- factor(results_filtered$ecocode, levels = ecocode_levels)
 
-# Rename facets
-results_filtered$method <- factor(
-  results_filtered$method,
-  levels = c("2B %SumRep","1B %SumRep"),
-  labels = c("Abundance-weighted", "No Abundance")
-)
-
-# ---- 12. Generate combined horizontal figure ----
-fig <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
+# ==============================================================
+# 11. Generate figure
+# ==============================================================
+p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
   geom_bar(
     stat = "identity",
     position = "stack",
@@ -241,18 +270,13 @@ fig <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
     legend.title = element_text(size = 12, face = "bold"),
     legend.text = element_text(size = 12)
   ) +
-  labs(y = "%SumRep", x = "Time (Years BP)"
-       )
+  labs(y = "%SumRep", x = "Time (Years BP)")
 
-# ---- 14. Save figure ----
-ggsave(
-  "005-ecocodes-britain-rerun.jpg",
-  fig,
-  device = "jpg",
-  here::here("analysis", "figures"),
-  width=40,
-  height=50,
-  units = "cm",
-  dpi = 300)
+# ==============================================================
+# 12. Save figure
+# ==============================================================
+ggsave(filename = "006-ecocodes-britain.jpg",
+       plot = p, path = here("analysis", "figures"),
+       width = 3300, height = 4200, units = "px", dpi = 300)
 
 message("✅ Ecological composition analysis completed and figure saved: 005-ecocodes-britain.jpg")

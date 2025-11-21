@@ -1,44 +1,49 @@
-############################################################
-# Script: Richness and Coverage Analysis (Raw Data)
+# ==============================================================
+# Script: Alpha Diversity Analysis (Raw Abundances)
 #
 # Purpose:
-#   Compute richness and coverage metrics (Observed Richness,
-#   Coverage, Estimated Richness) for Holocene fossil insect data
-#   from British/Irish Isles using entropart.
+#   Compute alpha diversity metrics (Hill numbers: Richness, Shannon, Simpson)
+#   for Holocene fossil insect data from the British/Irish Isles.
 #
 # Workflow:
 #   1. Load fossil insect occurrence data.
 #   2. Filter samples by region, context, and age constraints.
 #   3. Assign samples to 500-year temporal bins using IRanges.
-#   4. Prepare raw abundance matrix.
-#   5. Build list of matrices per bin.
-#   6. Compute richness and coverage metrics for each bin.
-#   7. Plot results.
+#   4. Merge sample metadata with bin assignments.
+#   5. Construct raw species abundance matrix (taxon × sample).
+#   6. Build a list of community matrices per time bin.
+#   7. Transform matrices into MetaCommunity objects.
+#   8. Compute alpha diversity metrics for each bin using entropart:
+#        - Richness (q = 0)
+#        - Shannon (q = 1)
+#        - Simpson (q = 2)
+#      Correction method: "UnveilJ" (accounts for unseen species).
+#   9. Plot diversity metrics across time with Holocene time slices.
 #
 # Key Notes:
 #   - Uses IRanges for robust interval overlap detection.
-#   - Diagnostic messages report taxa and samples dropped during prep
-#     and bins skipped due to insufficient data.
+#   - Weights in MetaCommunity are based on sample abundances.
+#   - Bins with <2 taxa or <2 samples are skipped (metrics not meaningful).
+#   - Output: Figure saved as JPEG in ./analysis/figures.
 #
 # Output:
-#   - Plot: "002-richness-estimation-britain.jpg"
-############################################################
+#   - Plot: "002-alpha-diversity-britain-raw.jpg"
+# ==============================================================
 
 # ---- 0. Load packages ----
 pacman::p_load(
-  data.table, tidyverse, here, IRanges, entropart, ggsci, ggplot2
+  data.table, tidyverse, here, IRanges, entropart, ggsci
 )
 
 # ==============================================================
 # 1. Import species occurrence data
 # ==============================================================
-bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
-              na.strings = c("", "NA", "NULL"), encoding = "UTF-8") %>%
+bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv")) %>%
   mutate(sample_id = paste(sample, sample_group, site, sep = "@")) %>%
   as_tibble()
 
 # ==============================================================
-# 2. Define temporal periods (TM1–TM8)
+# 2. Define temporal periods (TM1–TM8) after Pilotto et al. (2022)
 # ==============================================================
 rects <- tibble(
   ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
@@ -67,7 +72,7 @@ time_mat <- bugs %>%
   select(sample_id, age_younger, age_older) %>%
   dplyr::rename(start = age_younger, end = age_older)
 
-# Fix reversed ranges
+# Check for reversed ranges
 if (any(time_mat$start > time_mat$end)) {
   time_mat <- time_mat %>%
     mutate(start = pmin(start, end), end = pmax(start, end))
@@ -101,17 +106,18 @@ hits <- tibble(
   inner_join(bugs, by = "sample_id", relationship = "many-to-many")
 
 # ==============================================================
-# 7. Prepare raw abundance matrix
+# 7. Construct raw species abundance matrix
 # ==============================================================
 raw_mat <- hits %>%
   select(sample_id, bin_end, taxon, abundance) %>%
   distinct() %>%
   mutate(bin_end = as.numeric(bin_end))
 
-if (nrow(raw_mat) == 0) stop("raw_mat is empty after filtering.")
+if (nrow(raw_mat) == 0) stop("raw.mat is empty after filtering.")
+
 
 # ==============================================================
-# 8. Build lists of matrices per bin
+# 8. Build list of matrices per bin (same as gamma script)
 # ==============================================================
 build_Listdf <- function(df) {
   split(df, df$bin_end) %>%
@@ -125,11 +131,9 @@ build_Listdf <- function(df) {
 Listdf_raw <- build_Listdf(raw_mat)
 
 # ==============================================================
-# 9. Compute richness and coverage metrics
+# 9. Compute alpha diversity per bin
 # ==============================================================
-message("Running richness and coverage analysis...")
-
-results <- map_dfr(names(Listdf_raw), function(time_name) {
+alpha_results <- map_dfr(names(Listdf_raw), function(time_name) {
   mat <- Listdf_raw[[time_name]]
 
   # Initial counts
@@ -143,50 +147,41 @@ results <- map_dfr(names(Listdf_raw), function(time_name) {
   dropped_taxa <- initial_taxa - nrow(mat)
   dropped_samples <- initial_samples - ncol(mat)
 
-  message("[Raw] Bin ", time_name, ": Taxa retained = ", nrow(mat),
+  message("Bin ", time_name, ": Taxa retained = ", nrow(mat),
           " (Dropped: ", dropped_taxa, "), Samples retained = ", ncol(mat),
           " (Dropped: ", dropped_samples, ")")
 
   # Skip bins with too few taxa/samples
   if (nrow(mat) < 2 || ncol(mat) < 2) {
-    message("⚠️ [Raw] Bin ", time_name, " skipped (too few taxa or samples).")
+    message("⚠️ Bin ", time_name, " skipped (too few taxa or samples).")
     return(NULL)
   }
 
-  # Compute metrics
-  obs_rich <- sum(rowSums(mat) > 0)
-  cov <- tryCatch(Coverage(mat), error = function(e) NA)
-
-  Weights <- colSums(mat)
-  Weights <- Weights / sum(Weights)
-  MC <- tryCatch(MetaCommunity(mat, Weights), error = function(e) NULL)
-
-  richness <- NA
-  if (!is.null(MC)) {
-    richness <- tryCatch(Richness(MC$Ns, Correction = "Chao1"), error = function(e) NA)
-  }
+  # Compute diversity using abundance weighting
+  Weights <- colSums(mat) / sum(colSums(mat))
+  MC <- MetaCommunity(mat, Weights)
 
   tibble(
     Time = as.numeric(time_name),
-    Metric = c("Observed Richness", "Coverage", "Estimated Richness"),
-    Value = c(obs_rich, cov, richness)
+    Richness = AlphaDiversity(MC, q = 0, Correction = "UnveilJ")$Total,
+    Shannon  = AlphaDiversity(MC, q = 1, Correction = "UnveilJ")$Total,
+    Simpson  = AlphaDiversity(MC, q = 2, Correction = "UnveilJ")$Total
   )
 })
 
-if (nrow(results) == 0) stop("No valid bins for richness estimation.")
-
 # ==============================================================
-# 10. Plot richness and coverage metrics
+# 10. Plot alpha diversity
 # ==============================================================
-results <- results %>%
-  mutate(Metric = factor(Metric, levels = c("Observed Richness", "Coverage", "Estimated Richness")))
+alpha_results <- alpha_results %>%
+  pivot_longer(cols = c(Richness, Shannon, Simpson), names_to = "Metric", values_to = "Value") %>%
+  mutate(Metric = factor(Metric, levels = c("Richness", "Shannon", "Simpson")))
 
-plot_min <- min(results$Time)
-plot_max <- max(results$Time)
+plot_min <- min(alpha_results$Time, na.rm = TRUE)
+plot_max <- max(alpha_results$Time, na.rm = TRUE)
 rects_filtered <- rects %>% filter(ystart <= plot_max, yend >= plot_min)
-time_breaks <- pretty(results$Time, n = 10)
+time_breaks <- pretty(alpha_results$Time, n = 10)
 
-p <- ggplot(results, aes(x = Value, y = Time)) +
+p <- ggplot(alpha_results, aes(x = Value, y = Time)) +
   geom_rect(data = rects_filtered,
             aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
             inherit.aes = FALSE, alpha = 0.5) +
@@ -195,8 +190,8 @@ p <- ggplot(results, aes(x = Value, y = Time)) +
   facet_wrap(~Metric, scales = "free_x") +
   scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
   scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
-  labs(title = "Richness and Coverage",
-       x = "Value", y = "Time (Years BP)", fill = "Time Periods") +
+  labs(title = "Alpha Diversity", subtitle = "Raw abundances",
+       x = "Hill number", y = "Time (Years BP)", fill = "Time Periods") +
   coord_cartesian(ylim = c(plot_max, plot_min)) +
   theme_minimal(base_size = 12) +
   theme(
@@ -215,8 +210,8 @@ p <- ggplot(results, aes(x = Value, y = Time)) +
 # ==============================================================
 # 11. Save figure
 # ==============================================================
-ggsave(filename = "002-richness-estimation-britain.jpg",
+ggsave(filename = "003-alpha-diversity-britain-raw.jpg",
        plot = p, path = here("analysis", "figures"),
        width = 3300, height = 4200, units = "px", dpi = 300)
 
-message("✅ Richness and coverage plot generated successfully.")
+message("✅ Alpha diversity plot generated successfully.")

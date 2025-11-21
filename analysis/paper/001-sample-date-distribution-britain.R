@@ -8,7 +8,8 @@
 #   3. Plot summarized data over time
 ############################################################
 
-# ---- Load packages ----
+# ---- 0. Load required packages ----
+# pacman::p_load() loads the packages and installs them if missing
 pacman::p_load(tidyverse, IRanges, cowplot, here, data.table, viridis)
 
 # ==============================================================
@@ -17,7 +18,7 @@ pacman::p_load(tidyverse, IRanges, cowplot, here, data.table, viridis)
 # The raw dataset includes sample-level fossil insect occurrences across Europe from SEAD.
 # ==============================================================
 bugs <- fread(
-  here::here("analysis/data/raw_data/bugs_europe_extraction_samples_20250612.csv"),
+  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
   na.strings = c("", "NA", "NULL"),
   encoding = "UTF-8"
 )
