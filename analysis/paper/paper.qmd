@@ -101,33 +101,36 @@ pacman::p_load(tidyverse, IRanges, here, data.table)
 # ==============================================================
 # 1. Read data
 # --------------------------------------------------------------
-bugs.csv <- data.table::fread(
-  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv"),
-  na.strings = c("", "NA", "NULL"),
-  encoding = "UTF-8"
-)
+bugs <- data.table::fread(
+  here::here("analysis", "data", "raw_data", "bugs_europe_extraction_samples_20250612.csv")) %>% 
+  mutate(sample_id = paste(sample, sample_group, site, sep = "@")) %>%
+  as.tibble() 
 
 # ==============================================================
 # 2. Filter and prepare data
 # --------------------------------------------------------------
-bugs <- 
-  bugs.csv %>%
-  mutate(
-    region = case_when(
-      between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles")) %>%
-  filter(
-    context == "Stratigraphic sequence",
-    country != "Greenland",
-    sample != "BugsPresence",
-    between(age_older, -500, 16000),
-    between(age_younger, -500, 16000),
-    (age_older - age_younger) <= 2000
+time_mat <- bugs %>%
+  select(country, latitude, longitude, site, sample_id, sample, age_older, age_younger, context) %>%
+  mutate(age_range = age_older - age_younger,
+         mid_age = (age_older + age_younger) / 2,
+         region = case_when(
+           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+           TRUE ~ "Europe")
   ) %>%
-  distinct(region, sample, sample_group, site, age_older, age_younger) %>% 
-    mutate(
-    start = age_younger,
-    end   = age_older
-  )
+  filter(context == "Stratigraphic sequence",
+         sample != "BugsPresence",
+         age_range <= 2000,
+         between(mid_age, -500, 16000)) %>%
+  distinct() %>%
+  select(region, site, sample_id, age_younger, age_older) %>%
+  dplyr::rename(start = age_younger, end = age_older)
+
+# Check for reversed ranges
+if (any(time_mat$start > time_mat$end)) {
+  time_mat <- time_mat %>%
+    mutate(start = pmin(start, end), end = pmax(start, end))
+}
+
 
 # ==============================================================
 # 3. Define 500-year temporal bins
@@ -140,75 +143,81 @@ age_bins <- tibble(
 )
 
 # ==============================================================
-# 4. Identify overlapping samples with time bins
-# --------------------------------------------------------------
-# Uses IRanges to assign each sample to all 500-year bins that overlap its age range.
+# 4. Define 500-year temporal bins
 # ==============================================================
-bugs_ranges <- IRanges(start = bugs$start, end = bugs$end)
-bin_ranges <- IRanges(start = age_bins$start, end = age_bins$end)
-
-# Find overlaps between sample age ranges and bins
-overlaps <- findOverlaps(bugs_ranges, bin_ranges, type = "any")
-
-# ==============================================================
-# 5. Build overlap hits tibble
-# --------------------------------------------------------------
-# Produces a table linking each sample to its temporal bin.
-# ==============================================================
-overlap_hits <- tibble(
-  sample  = bugs$sample[queryHits(overlaps)],
-  sample_group = bugs$sample_group[queryHits(overlaps)],
-  site    = bugs$site[queryHits(overlaps)],
-  bin_start = age_bins$start[subjectHits(overlaps)],
-  bin_end   = age_bins$end[subjectHits(overlaps)],
-  region = bugs$region[queryHits(overlaps)]
+range <- tibble(
+  start = c(-500, seq(1, 15501, by = 500)),
+  end   = seq(0, 16000, by = 500)
 )
 
-# Filter out unique nr. of sites
+# ==============================================================
+# 5. Identify overlapping samples with time bins
+# ==============================================================
+query <- IRanges(start = time_mat$start, end = time_mat$end)
+subject <- IRanges(start = range$start, end = range$end)
+
+intersection <- findOverlaps(query, subject, type = "any")
+if (length(intersection) == 0) stop("No overlaps found. Check age ranges and bin definitions.")
+
+# ==============================================================
+# 6. Merge sample metadata with bin assignments
+# ==============================================================
+hits <- tibble(
+  region = time_mat$region[queryHits(intersection)],
+  site = time_mat$site[queryHits(intersection)],
+  sample_id = time_mat$sample_id[queryHits(intersection)],
+  bin_start = range$start[subjectHits(intersection)],
+  bin_end   = range$end[subjectHits(intersection)]
+)
+
+# ==============================================================
+# 7. Prepare sample and site counts
+# ==============================================================
+# Unique sites Europe
 sites_eu <- 
-  overlap_hits %>%
+  hits %>%
   select(site) %>% 
   distinct()
 
-# Filter out unique nr. of sites
+# Unique sites UK/Ireland
 sites_brit <- 
-  overlap_hits %>%
+  hits %>%
   filter(region == "British/Irish Isles") %>% 
   select(site) %>% 
   distinct()
 
-# Filter out unique nr. of samples
+# Unique samples UK/Ireland
 samples_brit <-  
-  overlap_hits %>%
+  hits %>%
   filter(region == "British/Irish Isles") %>% 
-  select(site, sample_group, sample) %>% 
+  select(sample_id) %>% 
   distinct()
 
-# Late Glacial nr. of samples
+# Late Glacial samples UK/Ireland
 LG_samples <-  
-  overlap_hits %>%
+  hits %>%
   filter(
     region == "British/Irish Isles",
-    between(bin_end, 12000, 16000)) %>% 
-  select(site, sample_group, sample) %>% 
+    between(bin_end, 10500, 16000)) %>% 
+  select(sample_id) %>% 
   distinct()
 
-# Early Holocene nr. of samples
+# Early Holocene samples UK/Ireland
 EH_samples <-  
-  overlap_hits %>%
+  hits %>%
   filter(
     region == "British/Irish Isles",
-    between(bin_end, 5500, 11500)) %>%
-  select(site, sample_group, sample) %>% 
+    between(bin_end, 6500, 10000)) %>%
+  select(sample_id) %>% 
   distinct()
 
-# Late Holocene nr. of samples
+# Late Holocene samples UK/Ireland
 LH_samples <-  
-  overlap_hits %>%
+  hits %>%
   filter(
     region == "British/Irish Isles",
-    between(bin_end, 500, 5500)) %>% 
-  select(site, sample_group, sample) %>% 
+    between(bin_end, 500, 6000)) %>% 
+  select(sample_id) %>% 
   distinct()
 ```
 
@@ -231,9 +240,9 @@ SEAD includes data generated by a variation of dating methods (e.g. radiometric,
 
 Analysis was performed in the R statistical open-source software [ver. 4.4.2; @rcore2021]. For temporal comparisons the study period was divided into 500-year bins and each sample was assigned to the bins they intersect using IRanges() from the Bioconductor package [@lawrence_etal2013]. Alpha, beta and gamma diversity metrics were calculated using a suite of ecological R packages. Each sample represents a single community, meaning that alpha diversity is defined on a sample basis. Gamma diversity represents the summed diversity of all samples that intersect a 500-year bin. Beta diversity, i.e. the change across time, is primarily analysed based on the aggregated community data (i.e. comparisons between 500-year bins). 
 
-Diversity metrics include species richness, Shannon and Simpson diversity, and species turnover. Species richness was calculated using the vegan package [@oksanen_etal2024].  with remaining alpha and gamma metrics calculated using the entropart package [@marcon_herault2015]. The entropart package offers a number of estimation bias-correction methods to address mathematical issues with certain indexes (e.g. Shannon) and unobserved species. For this study the default unveiled estimators (“UnveilJ”) based on @chao_jost2015 and @marcon2015 were used, which includes jackknife for species richness estimation. Species turnover was calculated using the turnover function and Rank Abundance Curves (RAC) from the codyn package [@hallett_etal2020].
+Diversity metrics include species richness, Shannon and Simpson diversity, and species turnover. Species richness was calculated using the vegan package [@oksanen_etal2024].  with remaining alpha and gamma metrics calculated using the entropart package [@marcon_herault2015]. The entropart package offers a number of estimation bias-correction methods to address mathematical issues with certain indexes (e.g. Shannon) and unobserved species. For this study the default unveiled estimators (“UnveilJ”) based on @chao_jost2015 and @marcon2015 were used, which includes jackknife for species richness estimation. Species turnover was calculated using Rank Abundance Curves (RAC) from the *codyn* package [@hallett_etal2020].
 
-The analysis compares both raw abundances and standardized values. Rarefaction is a common standardization method for samples with variable sample depth in ecology [@sanders1968]. Effectively, individuals are discarded randomly from samples larger than the threshold set by the analyst. This method has received criticism, however, for its poor reproducibility and issues related to unequal sample sizes [@mcmurdie_holmes2014; @willis2019]. An alternative to rarefaction is Scaling with Ranked Subsampling (SRS), which like rarefaction scales the dataset based on a threshold set by the analyst, but aims to preserve the population structure [@beule_karlovsky2020]. SRS was chosen as the primary standardization method for this study.  
+The analysis compares both raw abundances and standardized values. Rarefaction is a common standardization method for samples with variable sample depth in ecology [@sanders1968]. Effectively, individuals are discarded randomly from samples larger than the threshold set by the analyst. This method has received criticism, however, for its poor reproducibility and issues related to unequal sample sizes [@mcmurdie_holmes2014; @willis2019]. An alternative to rarefaction is Scaling with Ranked Subsampling *SRS), which like rarefaction scales the dataset based on a threshold set by the analyst, but preserves the population structure [@beule_karlovsky2020]. SRS was chosen as the primary standardization method for this study.  
 
 In both rarefaction and SRS a threshold (Cmin) must be set for the new sample depth (abundance of individuals). Typically the smallest sample is used as the threshold, which would be unsuitable in this case as that is 1 individual. The threshold needs to be high enough to produce a suitably diverse community, but low enough that the size of the dataset is not impacted too severely. Most samples feature between 5 – 10 individuals, meaning a higher threshold will exclude a large portion of the dataset. With this in mind, Cmin was set to 10 for the analysis. Standardization was performed using the *SRS* package [@heidrich_etal2021].
 
