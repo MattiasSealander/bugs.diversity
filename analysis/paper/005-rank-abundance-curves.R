@@ -4,7 +4,7 @@
 # Purpose:
 #   Compute temporal changes in rank-abundance curves (richness,
 #   evenness, rank shifts, species gains/losses) across 500-year bins
-#   for Holocene fossil insect data from British/Irish Isles.
+#   for Lateglacial-Holocene subfossil insect data from UK/Ireland.
 #
 # Workflow:
 #   1. Load fossil insect occurrence data.
@@ -14,19 +14,18 @@
 #   5. Compute RAC metrics using codyn::RAC_change().
 #   6. Plot results.
 #
+# Key Notes:
+#   - RAC is calculated by making pairwise comparisons between consecutive bins,
+#     moving from the oldest to the most recent 500-year bin.
+#
 # Output:
-#   - Plot: "004-rank-abundance-curves-britain.jpg"
+#   - Plot: "004-rank-abundance-curves.jpg"
 # ==============================================================
 
 # ---- 0. Load packages ----
 pacman::p_load(
   codyn, data.table, tidyverse, IRanges, ggsci, here
 )
-
-# ---- 1. Parameters ----
-age_min <- -500
-age_max <- 16000
-bin_width <- 500
 
 # ==============================================================
 # 2. Import and filter species occurrence data
@@ -41,13 +40,22 @@ bugs_filtered <- bugs %>%
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
   ) %>%
-  filter(region == "British/Irish Isles",
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
+         region == "British/Irish Isles",
          context == "Stratigraphic sequence",
          sample != "BugsPresence",
          age_range <= 2000,
          country != "Greenland") %>%
   mutate(mid_age = (age_older + age_younger) / 2) %>%
-  filter(between(mid_age, age_min, age_max))
+  filter(between(mid_age, -500, 16000))
 
 message("✅ Filtered data: ", nrow(bugs_filtered), " records retained.")
 
@@ -59,26 +67,26 @@ sample_meta <- bugs_filtered %>%
   dplyr::rename(start = age_younger, end = age_older)
 
 # ==============================================================
-# 4. Define temporal bins
+# 4. Define 500-year temporal bins
 # ==============================================================
-bins <- tibble(
-  start = c(age_min, seq(1, age_max - bin_width + 1, by = bin_width)),
-  end   = seq(0, age_max, by = bin_width)
+range <- tibble(
+  start = c(-500, seq(1, 15501, by = 500)),
+  end   = seq(0, 16000, by = 500)
 )
 
 # ==============================================================
 # 5. Assign samples to bins using IRanges
 # ==============================================================
 query <- IRanges(start = sample_meta$start, end = sample_meta$end)
-subject <- IRanges(start = bins$start, end = bins$end)
+subject <- IRanges(start = range$start, end = range$end)
 
 hits <- findOverlaps(query, subject, type = "any")
 if (length(hits) == 0) stop("No overlaps found. Check age ranges and bin definitions.")
 
 hits_df <- tibble(
   sample_id = sample_meta$sample_id[queryHits(hits)],
-  bin_start = bins$start[subjectHits(hits)],
-  bin_end   = bins$end[subjectHits(hits)]
+  bin_start = range$start[subjectHits(hits)],
+  bin_end   = range$end[subjectHits(hits)]
 ) %>%
   inner_join(bugs_filtered, by = "sample_id", relationship = "many-to-many") %>%
   select(sample_id, bin_end, taxon, abundance)
@@ -102,7 +110,7 @@ rac <- RAC_change(df = raw_abund,
                   time.var = "bin_end",
                   species.var = "taxon",
                   abundance.var = "tot_abund") %>%
-  mutate(bin_numeric = as.numeric(str_remove(bin_end, "^-"))) %>%
+  mutate(bin_numeric = as.numeric(str_remove(bin_end2, "^-"))) %>%
   pivot_longer(cols = c(richness_change, evenness_change, rank_change, gains, losses),
                names_to = "Metric", values_to = "Value")
 
@@ -112,13 +120,15 @@ rac$Metric <- factor(rac$Metric,
 message("✅ RAC metrics computed for ", length(unique(rac$bin_numeric)), " bins.")
 
 # ==============================================================
-# 8. Define background rectangles
+# 8. Define periods
 # ==============================================================
 rects <- tibble(
-  ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
-  yend   = c(16000, 12000, 9500, 8000, 6500, 4500, 4000, 3500),
-  col    = factor(c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"))
+  ystart = c(11700, 7000, 5000, 0),
+  yend   = c(16000, 11700, 7000, 5000),
+  col    = factor(c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"),
+                  levels = c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"))
 )
+
 
 metric_labels <- c(
   "richness_change" = "Richness change",
@@ -146,7 +156,7 @@ p <- ggplot(rac, aes(x = Value, y = bin_numeric)) +
   facet_wrap(~Metric, nrow = 1, scales = "free_x", labeller = labeller(Metric = metric_labels)) +
   scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
   scale_y_reverse(breaks = seq(16000, -500, by = -2000), labels = seq(16000, -500, by = -2000)) +
-  labs(title = "Rank-Abundance Curve Change (British/Irish Isles)",
+  labs(title = "Rank Abundance Curves",
        x = "Value", y = "Time (Years BP)", fill = "Time Periods") +
   coord_cartesian(ylim = c(plot_max, plot_min)) +
   theme_bw(base_size = 12) +
@@ -166,6 +176,6 @@ p <- ggplot(rac, aes(x = Value, y = bin_numeric)) +
 # ==============================================================
 # 10. Save figure
 # ==============================================================
-ggsave(filename = "005-rank-abundance-curves-britain.jpg",
+ggsave(filename = "004-rank-abundance-curves.jpg",
        plot = p, path = here("analysis", "figures"),
        width = 3300, height = 4200, units = "px", dpi = 300)

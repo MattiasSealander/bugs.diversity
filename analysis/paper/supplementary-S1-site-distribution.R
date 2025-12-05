@@ -14,13 +14,21 @@ bugs <- fread(
 
 # ---- 2. Filter to British/Irish Isles and natural context ----
 samples <- bugs %>%
-  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
          ) %>%
-  filter(
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
     region == "British/Irish Isles",
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
@@ -72,7 +80,7 @@ fig <-
   geom_sf(data = sites_sf, shape = 21, color = "white", fill = "#1f78b4", size = 2, alpha = 0.8) +
   facet_wrap(~bin_end, nrow = 4) +
   coord_sf(xlim = c(-12.6, 1.8), ylim = c(49.8, 62.6), expand = FALSE) +
-  labs(title = "Fossil insect sites in the British/Irish Isles (per 500-year bin)") +
+  labs(title = "(sub-)Fossil insect sites in the UK and Ireland") +
   theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -84,7 +92,7 @@ fig <-
 # 8. Save figure
 # ==============================================================
 ggsave(
-  filename = "supplementary-S1.jpg",
+  filename = "supplementary-S1-coleoptera.jpg",
   plot = fig,
   path = here("analysis", "figures"),
   units = "cm",

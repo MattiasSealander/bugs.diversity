@@ -43,27 +43,36 @@ bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_sampl
   as_tibble()
 
 # ==============================================================
-# 2. Define temporal periods (TM1–TM8)
+# 2. Define periods
 # ==============================================================
 rects <- tibble(
-  ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
-  yend   = c(16000, 12000, 9500, 8000, 6500, 4500, 4000, 3500),
-  col    = factor(c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"),
-                  levels = c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"))
+  ystart = c(11700, 7000, 5000, 0),
+  yend   = c(16000, 11700, 7000, 5000),
+  col    = factor(c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"),
+                  levels = c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"))
 )
 
 # ==============================================================
 # 3. Filter and prepare temporal range data
 # ==============================================================
 time_mat <- bugs %>%
-  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          mid_age = (age_older + age_younger) / 2,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
   ) %>%
-  filter(region == "British/Irish Isles",
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
+         region == "British/Irish Isles",
          context == "Stratigraphic sequence",
          sample != "BugsPresence",
          age_range <= 2000,
@@ -200,6 +209,7 @@ rich.mat$type <- factor(rich.mat$type, levels = c("Raw", "Rarefaction", "SRS"))
 plot_min <- min(rich.mat$bin_end)
 plot_max <- max(rich.mat$bin_end)
 rects_filtered <- rects %>% filter(ystart <= plot_max, yend >= plot_min)
+time_breaks <- pretty(rich.mat$bin_end, n = 10)
 
 fig <- ggplot(rich.mat, aes(x = mean_rich, y = bin_end)) +
   geom_rect(data = rects_filtered,
@@ -210,7 +220,8 @@ fig <- ggplot(rich.mat, aes(x = mean_rich, y = bin_end)) +
   geom_point(shape = 21, size = 4, fill = "green4", color = "black") +
   facet_wrap(~type, scales = "free_x") +
   scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
-  scale_y_reverse(breaks = pretty(rich.mat$bin_end, n = 10)) +
+  scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
+  coord_cartesian(ylim = c(plot_max, plot_min)) +
   labs(title = "Species Richness",
        x = "Mean richness", y = "Time (Years BP)", fill = "Time Periods") +
   theme_minimal(base_size = 12) +
@@ -225,8 +236,8 @@ fig <- ggplot(rich.mat, aes(x = mean_rich, y = bin_end)) +
     legend.position = "right"
   )
 
-ggsave("002-richness-comparison-britain.jpg",
+ggsave("002-richness-comparison.jpg",
        fig, path = here("analysis", "figures"),
        width = 3300, height = 4200, units = "px", dpi = 300)
 
-message("✅ Richness comparison completed and figure saved: 002-richness-comparison-britain.jpg")
+message("✅ Richness comparison completed and figure saved: 002-richness-comparison.jpg")

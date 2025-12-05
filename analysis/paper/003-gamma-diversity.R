@@ -39,27 +39,36 @@ bugs <- fread(here("analysis", "data", "raw_data", "bugs_europe_extraction_sampl
   as_tibble()
 
 # ==============================================================
-# 2. Define temporal periods (TM1–TM8)
+# 2. Define periods
 # ==============================================================
 rects <- tibble(
-  ystart = c(12000, 9500, 8000, 6500, 4500, 4000, 3500, -500),
-  yend   = c(16000, 12000, 9500, 8000, 6500, 4500, 4000, 3500),
-  col    = factor(c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"),
-                  levels = c("TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 6", "TM 7", "TM 8"))
+  ystart = c(11700, 7000, 5000, 0),
+  yend   = c(16000, 11700, 7000, 5000),
+  col    = factor(c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"),
+                  levels = c("Lateglacial", "Early Holocene", "Mid-Holocene", "Late Holocene"))
 )
 
 # ==============================================================
 # 3. Filter and prepare temporal range data
 # ==============================================================
 time_mat <- bugs %>%
-  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          mid_age = (age_older + age_younger) / 2,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
   ) %>%
-  filter(region == "British/Irish Isles",
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
+         region == "British/Irish Isles",
          context == "Stratigraphic sequence",
          sample != "BugsPresence",
          age_range <= 2000,
@@ -148,9 +157,7 @@ srs_long <- as_tibble(srs_out, rownames = "taxon") %>%
   inner_join(raw_mat %>% select(sample_id, bin_end), by = "sample_id", relationship = "many-to-many") %>%
   distinct()
 
-# ==============================================================
-# 9. Build lists of matrices per bin
-# ==============================================================
+# ---- 9. Build lists of matrices per bin ----
 build_Listdf <- function(df) {
   split(df, df$bin_end) %>%
     map(~ .x %>%
@@ -163,11 +170,8 @@ build_Listdf <- function(df) {
 Listdf_raw <- build_Listdf(raw_mat)
 Listdf_SRS <- build_Listdf(srs_long)
 
-# ==============================================================
-# 10. Compute gamma diversity for Raw and SRS
-# ==============================================================
-gamma_results <- map_dfr(c("Raw", "SRS"), function(dataset_type) {
-  data_list <- if (dataset_type == "Raw") Listdf_raw else Listdf_SRS
+# ---- 10. Compute gamma diversity for Raw and SRS ----
+compute_gamma <- function(data_list, dataset_type) {
   map_dfr(names(data_list), function(time_name) {
     mat <- data_list[[time_name]]
 
@@ -182,7 +186,6 @@ gamma_results <- map_dfr(c("Raw", "SRS"), function(dataset_type) {
     dropped_taxa <- initial_taxa - nrow(mat)
     dropped_samples <- initial_samples - ncol(mat)
 
-    # Message for diagnostics
     message("[", dataset_type, "] Bin ", time_name, ": Taxa retained = ", nrow(mat),
             " (Dropped: ", dropped_taxa, "), Samples retained = ", ncol(mat),
             " (Dropped: ", dropped_samples, ")")
@@ -198,58 +201,60 @@ gamma_results <- map_dfr(c("Raw", "SRS"), function(dataset_type) {
     tibble(
       Time = as.numeric(time_name),
       Metric = c("Richness", "Shannon", "Simpson"),
-      Value = c(GammaDiversity(MC, q = 0),
-                GammaDiversity(MC, q = 1),
-                GammaDiversity(MC, q = 2)),
+      Value = c(GammaDiversity(MC, q = 0, Correction = "UnveiliC"),
+                GammaDiversity(MC, q = 1, Correction = "UnveiliC"),
+                GammaDiversity(MC, q = 2, Correction = "UnveiliC")),
       Type = dataset_type
     )
   })
-})
+}
 
-# ==============================================================
-# 11. Plot gamma diversity
-# ==============================================================
-gamma_results <- gamma_results %>%
-  mutate(Metric = factor(Metric, levels = c("Richness", "Shannon", "Simpson")))
+gamma_raw <- compute_gamma(Listdf_raw, "Raw")
+gamma_srs <- compute_gamma(Listdf_SRS, "SRS")
 
-plot_min <- min(gamma_results$Time)
-plot_max <- max(gamma_results$Time)
-rects_filtered <- rects %>% filter(ystart <= plot_max, yend >= plot_min)
-time_breaks <- pretty(gamma_results$Time, n = 10)
+# ---- 11. Plot function ----
+plot_gamma <- function(gamma_data, dataset_type, filename) {
+  gamma_data <- gamma_data %>%
+    mutate(Metric = factor(Metric, levels = c("Richness", "Shannon", "Simpson")))
 
-p <- ggplot(gamma_results, aes(x = Value, y = Time, color = Type)) +
-  geom_rect(data = rects_filtered,
-            aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
-            inherit.aes = FALSE, alpha = 0.5) +
-  geom_path(data = filter(gamma_results, Type == "SRS"), aes(group = Metric), linewidth = 1) +
-  geom_point(data = filter(gamma_results, Type == "SRS"), size = 3) +
-  geom_path(data = filter(gamma_results, Type == "Raw"), aes(group = Metric), linewidth = 1, linetype = "dashed") +
-  geom_point(data = filter(gamma_results, Type == "Raw"), size = 3) +
-  facet_wrap(~Metric, scales = "free_x") +
-  scale_color_manual(values = c("SRS" = "green4", "Raw" = "black"), name = "Dataset") +
-  scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
-  scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
-  labs(title = "Gamma Diversity", x = "Hill number", y = "Time (Years BP)", fill = "Time Periods") +
-  coord_cartesian(ylim = c(plot_max, plot_min)) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.y = element_text(size = 12, colour = "black"),
-    axis.text.x = element_text(size = 12, colour = "black", angle = 45, vjust = .5),
-    axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
-    axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
-    strip.background = element_rect(fill = "#f0f0f0", color = NA),
-    strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
-    plot.title = element_text(size = 16, face = "bold", colour = "black"),
-    legend.title = element_text(size = 16, face = "bold", colour = "black"),
-    legend.text = element_text(size = 12, colour = "black"),
-    legend.position = "right"
-  )
+  plot_min <- min(gamma_data$Time)
+  plot_max <- max(gamma_data$Time)
+  rects_filtered <- rects %>% filter(ystart <= plot_max, yend >= plot_min)
+  time_breaks <- pretty(gamma_data$Time, n = 10)
 
-# ==============================================================
-# 12. Save figure
-# ==============================================================
-ggsave(filename = "002-gamma-diversity-raw-srs.jpg",
-       plot = p, path = here("analysis", "figures"),
-       width = 3300, height = 4200, units = "px", dpi = 300)
+  p <- ggplot(gamma_data, aes(x = Value, y = Time)) +
+    geom_rect(data = rects_filtered,
+              aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
+              inherit.aes = FALSE, alpha = 0.5) +
+    geom_path(aes(group = Metric), linewidth = 1, color = "black", linetype = "dashed") +
+    geom_point(size = 3, color = "black") +
+    facet_wrap(~Metric, scales = "free_x") +
+    scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
+    scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
+    labs(title = "Gamma Diversity", subtitle = paste(dataset_type, "values"),
+         x = "Hill number", y = "Time (Years BP)", fill = "Time Periods") +
+    coord_cartesian(ylim = c(plot_max, plot_min)) +
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.text.y = element_text(size = 12, colour = "black"),
+      axis.text.x = element_text(size = 12, colour = "black", angle = 45, vjust = .5),
+      axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
+      axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
+      strip.background = element_rect(fill = "#f0f0f0", color = NA),
+      strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
+      plot.title = element_text(size = 16, face = "bold", colour = "black"),
+      legend.title = element_text(size = 16, face = "bold", colour = "black"),
+      legend.text = element_text(size = 12, colour = "black"),
+      legend.position = "right"
+    )
 
-message("✅ Gamma diversity plot generated successfully.")
+  ggsave(filename = filename,
+         plot = p, path = here("analysis", "figures"),
+         width = 3300, height = 4200, units = "px", dpi = 300)
+
+  message("✅ Gamma diversity plot for ", dataset_type, " saved as ", filename)
+}
+
+# ---- 12. Generate and save plots ----
+plot_gamma(gamma_raw, "Raw (unstandardized) abundances", "003-gamma-diversity-raw.jpg")
+plot_gamma(gamma_srs, "SRS standardized abundances", "003-gamma-diversity-srs.jpg")

@@ -17,13 +17,21 @@ bugs <- fread(
 # ==============================================================
 # Unique samples which has a defined age range within criteria
 samples <- bugs %>%
-  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample, site, sample_group, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
   ) %>%
-  filter(
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
     region == "British/Irish Isles",
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
@@ -118,6 +126,6 @@ img_trimmed <- image_trim(img)
 img_final <- image_border(img_trimmed, color = "white", geometry = "5x5")
 
 # Save cropped image
-image_write(img_final, path = here("analysis", "figures", "supplementary-S2.png"), format = "png")
+image_write(img_final, path = here("analysis", "figures", "supplementary-S2-coleoptera.png"), format = "png")
 
 message("✅ Data has been summarized and table saved: 'supplementary-S2jpg'")

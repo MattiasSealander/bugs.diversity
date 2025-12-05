@@ -37,14 +37,23 @@ eco <- fread(here("analysis", "data", "raw_data", "sead_ecocodes_20250114.csv"))
 # 2. Filter and prepare temporal range data
 # ==============================================================
 time_mat <- bugs %>%
-  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, sample_id, sample, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          mid_age = (age_older + age_younger) / 2,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "")
   ) %>%
-  filter(region == "British/Irish Isles",
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
+         region == "British/Irish Isles",
          context == "Stratigraphic sequence",
          sample != "BugsPresence",
          age_range <= 2000,
@@ -249,6 +258,10 @@ results_filtered$ecocode <- factor(results_filtered$ecocode, levels = ecocode_le
 # ==============================================================
 # 11. Generate figure
 # ==============================================================
+time_min <- 0
+time_max <- 16000
+time_breaks <- seq(time_min, time_max, by = 1000)
+
 p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
   geom_bar(
     stat = "identity",
@@ -258,7 +271,7 @@ p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
     ) +
   scale_fill_manual(values = colors, name = "Habitat") +
   guides(fill = guide_legend(nrow = 5, reverse = TRUE)) +
-  scale_x_reverse(limits = c(16000, -500), breaks = scales::pretty_breaks(n = 10)) +
+  scale_x_reverse(breaks = time_breaks, labels = time_breaks) +
   coord_flip() +
   ggh4x::facet_grid2(~method, scales = "free", axes = "x") +
   theme_bw() +
@@ -275,7 +288,7 @@ p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
 # ==============================================================
 # 12. Save figure
 # ==============================================================
-ggsave(filename = "006-ecocodes-britain.jpg",
+ggsave(filename = "006-ecocodes-britain-coleoptera.jpg",
        plot = p, path = here("analysis", "figures"),
        width = 3300, height = 4200, units = "px", dpi = 300)
 

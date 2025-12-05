@@ -55,6 +55,15 @@ gbbox <- st_bbox(c(xmin = -11.5, ymin = 49.8, xmax = 1.8, ymax = 61), crs = 4326
 sites <- bugs %>%
   mutate(age_range = age_older - age_younger) %>%
   filter(
+    !family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                        "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                        "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                        "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                        "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                        "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                        "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                        "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                        "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
     context == "Stratigraphic sequence",
     sample != "BugsPresence",
     age_range <= 2000,
@@ -122,15 +131,18 @@ plot.2 <- ggplot() +
   scale_fill_viridis(name = "Time (Years BP)", direction = -1) +
   coord_sf(datum = NA, clip = "on", expand = FALSE) +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        plot.background = element_blank())
 
 # 5c. Create legend
 legend_plot <- ggplot() +
   geom_sf(data = sites.gb.sf, aes(fill = age_younger),
           shape = 21, color = "white", alpha = 0.8, lwd = 3) +
-  scale_fill_viridis(name = "Time (Years BP)", direction = -1) +
+  scale_fill_viridis(name = "Time (Years BP)", direction = -1, breaks=c(2000, 6000, 10000, 14000)) +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.key.width= unit(1.5, 'cm'))
 legend <- get_legend(legend_plot)
 
 # 5d. Combine main map and inset
@@ -146,7 +158,7 @@ fig_with_legend <- plot_grid(fig, legend, ncol = 1, rel_heights = c(1, 0.05))
 # Save the combined figure to the figures directory.
 # ==============================================================
 ggsave(
-  "001-sites-overview-britain.jpg",
+  "001-sites-overview.jpg",
   fig_with_legend,
   device = "jpg",
   path = here("analysis", "figures"),
@@ -156,4 +168,4 @@ ggsave(
   dpi = 300
 )
 
-message("✅ Sites have been plotted and figure saved: '001-sites-overview-britain.jpg'")
+message("✅ Sites have been plotted and figure saved: '001-sites-overview.jpg'")
