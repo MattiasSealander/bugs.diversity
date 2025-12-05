@@ -1,5 +1,5 @@
 ---
-title: "This world is a buggy program: European trends in Coleopteran diversity during the Holocene"
+title: "This world is a buggy program: Long-term biodiversity changes in Coleopteran communities on the British Isles"
 author:
  - "Mattias Sjölander":
       correspondence: "yes"
@@ -8,12 +8,16 @@ author:
       institute: [UU]
  - "Nick Schafstall":
       email: nick.schafstall@gmail.com
-      orcid: 0000-xxxx-xxxx-xxxx
+      orcid: 0000-0002-7781-549X
       institute: []
  - "Scott Cocker":
       email: scott.cocker@geo.su.se
       orcid: 0000-xxxx-xxxx-xxxx
       institute: [SU]
+ - "Francesca Pilotto":
+      email: philip.buckland@umu.se
+      orcid: 0000-0002-2430-0839
+      institute: [UmU]      
  - "Philip Buckland":
       email: philip.buckland@umu.se
       orcid: 0000-0002-2430-0839
@@ -25,6 +29,9 @@ institute:
   - SU:
       name: Department of Geological Sciences
       address: Stockholm University, Svante Arrhenius väg 8, 114 18 Stockholm, Sweden
+  - NINA:
+      name: Norwegian Institute for Nature Research, Oslo, Norway
+      address: Høgskoleringen 9, 7034 Trondheim, Norway
   - UmU:
       name: Department of Historical, Philosophical and Religious Studies, Umeå University
       address: Humanisthuset, Petrus Laestadius väg, 907 36 Umeå, Sweden
@@ -110,14 +117,23 @@ bugs <- data.table::fread(
 # 2. Filter and prepare data
 # --------------------------------------------------------------
 time_mat <- bugs %>%
-  select(country, latitude, longitude, site, sample_id, sample, age_older, age_younger, context) %>%
+  select(country, latitude, longitude, site, sample_id, sample, age_older, age_younger, context, family_name) %>%
   mutate(age_range = age_older - age_younger,
          mid_age = (age_older + age_younger) / 2,
          region = case_when(
            between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
            TRUE ~ "Europe")
   ) %>%
-  filter(context == "Stratigraphic sequence",
+  filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
+                             "BRACHYCENTRIDAE", "CALOPTERYGIDAE", "CERCOPIDAE", "CHIRONOMIDAE", "CICADELLIDAE", "CICADOMORPHA",
+                             "CIXIIDAE", "CORIXIDAE", "CYCLORRHAPHA", "CYDNIDAE", "DELPHACIDAE", "DERMAPTERA", "DIPTERA", "FORFICULIDAE",
+                             "FORMICIDAE", "FULGOROMORPHA", "GERRIDAE", "GLOSSOSOMATIDAE", "GOERIDAE", "HEBRIDAE", "HEMIPTERA",
+                             "HETEROPTERA", "HOMOPTERA", "HYDROPSYCHIDAE", "HYDROPTILIDAE", "HYMENOPTERA", "LEPIDOPTERA", "LEPIDOSTOMATIDAE",
+                             "LEPTOCERIDAE", "LIMNEPHILIDAE", "LYGAEIDAE", "MEMBRACIDAE", "MICROPHYSIDAE", "MICROSPORIDAE", "MIRIDAE",
+                             "MOLANNIDAE", "NABIDAE", "NEMATOCERA", "NEMOURIDAE", "ODONATA", "PARASITICA", "PENTATOMIDAE", "PHRYGANEIDAE",
+                             "POLYCENTROPIDAE", "PSYCHOMYIIDAE", "PSYLLIDAE", "RAPHIDIIDAE", "SALDIDAE", "SCUTELLERIDAE", "SERICOSTOMATIDAE",
+                             "SIALIDAE", "TRICHOPTERA", "THYREOCORIDAE", "TINGIDAE", "TIPULIDAE", "TRIOPSIDAE", "TRIOZIDAE"),
+         context == "Stratigraphic sequence",
          sample != "BugsPresence",
          age_range <= 2000,
          between(mid_age, -500, 16000)) %>%
@@ -194,31 +210,22 @@ samples_brit <-
   distinct()
 
 # Late Glacial samples UK/Ireland
-LG_samples <-  
-  hits %>%
-  filter(
-    region == "British/Irish Isles",
-    between(bin_end, 10500, 16000)) %>% 
-  select(sample_id) %>% 
-  distinct()
+LG_samples <- hits %>%
+  filter(region == "British/Irish Isles",
+         bin_end >= 10500 & bin_start <= 16000) %>% 
+  distinct(sample_id)
 
 # Early Holocene samples UK/Ireland
-EH_samples <-  
-  hits %>%
-  filter(
-    region == "British/Irish Isles",
-    between(bin_end, 6500, 10000)) %>%
-  select(sample_id) %>% 
-  distinct()
-
+EH_samples <- hits %>%
+  filter(region == "British/Irish Isles",
+         bin_end >= 6500 & bin_start <= 10000) %>%
+  distinct(sample_id)
+  
 # Late Holocene samples UK/Ireland
-LH_samples <-  
-  hits %>%
-  filter(
-    region == "British/Irish Isles",
-    between(bin_end, 500, 6000)) %>% 
-  select(sample_id) %>% 
-  distinct()
+LH_samples <- hits %>%
+  filter(region == "British/Irish Isles",
+         bin_end >= 0 & bin_start <= 6000) %>% 
+  distinct(sample_id)
 ```
 
 # Introduction
@@ -437,6 +444,70 @@ knitr::include_graphics(here::here("analysis", "figures", "005-ecocodes-britain.
 quietly(source(here::here("analysis", "paper", "005-ecocodes-terrestrial-britain.R"), encoding = "UTF-8"))
 knitr::include_graphics(here::here("analysis", "figures", "005-ecocodes-terrestrial-britain.jpg"), error = FALSE)
 ```
+
+
+```{r}
+#| label: fig-corr-test
+#| cache: true
+#| aspect-ratio: 1
+#| fig.align: "center"
+#| out.height: "2100px"
+#| out.width: "1500px"
+#| fig-cap: "Habitat reconstruction focused on terrestrial environments. Species and abundance data has been summed and calculated for each 500-year bin a sample intersects. Habitat reconstructions are based on the BugsCEP ecocodes (Buckland 2007:102), visualised both as abundance weighted and species only reconstruction."
+
+quietly(source(here::here("analysis", "paper", "006-ecocodes-britain-coleoptera.R"), encoding = "UTF-8"))
+quietly(source(here::here("analysis", "paper", "007-oxygen-corr-script.R"), encoding = "UTF-8"))
+
+eco_results <- results_filtered %>% 
+  filter(method == "Abundance-weighted")
+  
+gamma <- p_div
+d18o <- p_d18
+
+p_eco <- ggplot(eco_results, aes(x = bin, y = value, fill = ecocode)) +
+  geom_bar(
+    stat = "identity",
+    position = "stack",
+    alpha = 0.9,
+    just = 0
+    ) +
+  scale_fill_manual(values = colors, name = "Habitat") +
+  guides(fill = guide_legend(nrow = 5, reverse = TRUE)) +
+  scale_x_reverse(breaks = time_breaks, labels = time_breaks) +  
+  labs(
+    title = "Habitat reconstruction",
+    subtitle = "Abundance-weighted",
+    x = "",
+    y = "%SumRep"
+  ) +
+  coord_flip() +
+  theme_bw() +
+  theme(
+    plot.title    = element_text(size = 16, face = "bold", colour = "black"),
+    axis.text.y = element_blank(),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    strip.text = element_text(size = 14, face = "bold"),
+    legend.position = "none",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 12),
+  ) +
+  labs(y = "%SumRep", x = "")
+
+combined <- p_div + p_eco + p_d18 +   plot_layout(ncol = 3, widths = c(1, .6, .5))
+
+# Save combined figure
+ggsave(
+  filename = "007-gamma-eco-d18o.jpg",
+  plot     = combined,
+  path     = fig_dir,
+  width = 40,
+  height = 30,
+  units = "cm",
+  dpi = 300
+)
+
+```
+
 
  \linebreak
 
