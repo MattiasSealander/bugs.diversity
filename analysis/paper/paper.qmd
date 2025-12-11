@@ -121,7 +121,7 @@ time_mat <- bugs %>%
   mutate(age_range = age_older - age_younger,
          mid_age = (age_older + age_younger) / 2,
          region = case_when(
-           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "British/Irish Isles",
+           between(latitude, 49.8, 62.6) & between(longitude, -12.6, 1.8) ~ "UK/Ireland",
            TRUE ~ "Europe")
   ) %>%
   filter(!family_name %in% c("ACANTHOSOMATIDAE","ANTHOCORIDAE", "APHALARIDAE", "APHIDOIDEA", "AUCHENORRHYNCHA", "BIBIONIDAE",
@@ -198,33 +198,39 @@ sites_eu <-
 # Unique sites UK/Ireland
 sites_brit <- 
   hits %>%
-  filter(region == "British/Irish Isles") %>% 
+  filter(region == "UK/Ireland") %>% 
   select(site) %>% 
   distinct()
 
 # Unique samples UK/Ireland
 samples_brit <-  
   hits %>%
-  filter(region == "British/Irish Isles") %>% 
+  filter(region == "UK/Ireland") %>% 
   select(sample_id) %>% 
   distinct()
 
 # Late Glacial samples UK/Ireland
 LG_samples <- hits %>%
-  filter(region == "British/Irish Isles",
-         bin_end >= 10500 & bin_start <= 16000) %>% 
+  filter(region == "UK/Ireland",
+         bin_end >= 11700 & bin_start <= 16000) %>% 
   distinct(sample_id)
 
 # Early Holocene samples UK/Ireland
 EH_samples <- hits %>%
-  filter(region == "British/Irish Isles",
-         bin_end >= 6500 & bin_start <= 10000) %>%
+  filter(region == "UK/Ireland",
+         bin_end >= 7000 & bin_start <= 11699) %>%
   distinct(sample_id)
   
+# Mid-Holocene samples UK/Ireland
+MH_samples <- hits %>%
+  filter(region == "UK/Ireland",
+         bin_end >= 5000 & bin_start <= 6999) %>% 
+  distinct(sample_id)
+
 # Late Holocene samples UK/Ireland
 LH_samples <- hits %>%
-  filter(region == "British/Irish Isles",
-         bin_end >= 0 & bin_start <= 6000) %>% 
+  filter(region == "UK/Ireland",
+         bin_end >= 0 & bin_start <= 4999) %>% 
   distinct(sample_id)
 ```
 
