@@ -19,7 +19,7 @@
 # ==============================================================
 
 # ---- 0. Load packages ----
-pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggrepel, spatstat, rnaturalearth, rnaturalearthdata, viridis
+pacman::p_load(cowplot, data.table, here, tidyverse, sf, ggspatial, spatstat, rnaturalearth, rnaturalearthdata, viridis
                )
 
 # ==============================================================
@@ -129,6 +129,9 @@ plot.2 <- ggplot() +
           shape = 21, color = "white", alpha = 0.8, lwd = 3) +
   scale_size_identity() +
   scale_fill_viridis(name = "Time (Years BP)", direction = -1) +
+  annotation_north_arrow(location = "tl", which_north = "true",
+                                    height = unit(1.5, "cm"),
+                                    width = unit(1.5, "cm")) +
   coord_sf(datum = NA, clip = "on", expand = FALSE) +
   theme_bw() +
   theme(legend.position = "none",
