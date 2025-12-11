@@ -28,7 +28,7 @@
 
 # ---- 0. Load packages ----
 pacman::p_load(
-  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci
+  data.table, tidyverse, here, BiocManager, IRanges, SRS, entropart, ggsci, patchwork
 )
 
 # ==============================================================
@@ -171,46 +171,79 @@ Listdf_raw <- build_Listdf(raw_mat)
 Listdf_SRS <- build_Listdf(srs_long)
 
 # ---- 10. Compute gamma diversity for Raw and SRS ----
+
+
 compute_gamma <- function(data_list, dataset_type) {
-  map_dfr(names(data_list), function(time_name) {
+  purrr::map_dfr(names(data_list), function(time_name) {
     mat <- data_list[[time_name]]
 
-    # Initial counts
-    initial_taxa <- nrow(mat)
+    # Initial counts and filtering
+    initial_taxa    <- nrow(mat)
     initial_samples <- ncol(mat)
-
-    # Drop empty taxa/samples
     mat <- mat[rowSums(mat) > 0, , drop = FALSE]
     mat <- mat[, colSums(mat) > 0, drop = FALSE]
-
-    dropped_taxa <- initial_taxa - nrow(mat)
+    dropped_taxa    <- initial_taxa    - nrow(mat)
     dropped_samples <- initial_samples - ncol(mat)
 
     message("[", dataset_type, "] Bin ", time_name, ": Taxa retained = ", nrow(mat),
             " (Dropped: ", dropped_taxa, "), Samples retained = ", ncol(mat),
             " (Dropped: ", dropped_samples, ")")
 
-    # Skip bins with too few taxa/samples
     if (nrow(mat) < 2 || ncol(mat) < 2) {
       message("⚠️ [", dataset_type, "] Bin ", time_name, " skipped (too few taxa or samples).")
       return(NULL)
     }
 
-    # Compute diversity
-    MC <- MetaCommunity(mat)
-    tibble(
-      Time = as.numeric(time_name),
-      Metric = c("Richness", "Shannon", "Simpson"),
-      Value = c(GammaDiversity(MC, q = 0, Correction = "UnveiliC"),
-                GammaDiversity(MC, q = 1, Correction = "UnveiliC"),
-                GammaDiversity(MC, q = 2, Correction = "UnveiliC")),
+    # Gamma diversity with correction (same as your script)
+    MC <- entropart::MetaCommunity(mat)
+
+    tibble::tibble(
+      Time  = as.numeric(time_name),
+      Metric = c("Shannon", "Simpson"),
+      Value  = c(
+        entropart::GammaDiversity(MC, q = 1, Correction = "UnveiliC"),
+        entropart::GammaDiversity(MC, q = 2, Correction = "UnveiliC")
+      ),
       Type = dataset_type
     )
   })
 }
 
+
 gamma_raw <- compute_gamma(Listdf_raw, "Raw")
 gamma_srs <- compute_gamma(Listdf_SRS, "SRS")
+
+
+# Long-format binder (only Shannon & Simpson)
+prep_gamma_long <- function(gamma_raw, gamma_srs) {
+  raw_l <- gamma_raw %>%
+    dplyr::mutate(Metric = factor(Metric, levels = c("Shannon","Simpson"))) %>%
+    dplyr::mutate(Type = "RAW")
+
+  srs_l <- gamma_srs %>%
+    dplyr::mutate(Metric = factor(Metric, levels = c("Shannon","Simpson"))) %>%
+    dplyr::mutate(Type = "SRS")
+
+  dplyr::bind_rows(raw_l, srs_l)
+}
+
+# Per-metric linear transform mapping SRS -> RAW  (x_raw = a * x_srs + b)
+compute_transforms <- function(df_long) {
+  df_long %>%
+    dplyr::group_by(Metric) %>%
+    dplyr::summarise(
+      min_raw = min(Value[Type == "RAW"], na.rm = TRUE),
+      max_raw = max(Value[Type == "RAW"], na.rm = TRUE),
+      min_srs = min(Value[Type == "SRS"], na.rm = TRUE),
+      max_srs = max(Value[Type == "SRS"], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      a = ifelse(max_srs > min_srs, (max_raw - min_raw)/(max_srs - min_srs), 1),
+      b = min_raw - a * min_srs
+    )
+}
+
 
 # ---- 11. Plot function ----
 plot_gamma <- function(gamma_data, dataset_type, filename) {
@@ -258,3 +291,107 @@ plot_gamma <- function(gamma_data, dataset_type, filename) {
 # ---- 12. Generate and save plots ----
 plot_gamma(gamma_raw, "Raw (unstandardized) abundances", "003-gamma-diversity-raw.jpg")
 plot_gamma(gamma_srs, "SRS standardized abundances", "003-gamma-diversity-srs.jpg")
+
+
+
+plot_metric_dual_gamma <- function(df_long, metric_name, rects) {
+  d <- df_long %>% dplyr::filter(Metric == metric_name)
+
+  tr <- compute_transforms(d) %>% dplyr::filter(Metric == metric_name)
+  a <- tr$a[1]; b <- tr$b[1]
+
+  d_plot <- d %>%
+    dplyr::mutate(Value_plot = ifelse(Type == "SRS", a * Value + b, Value))
+
+  # Axis/time helpers (use your rects/time span)
+  time_min <- min(d_plot$Time, na.rm = TRUE)
+  time_max <- max(d_plot$Time, na.rm = TRUE)
+  rects_filtered <- rects %>% dplyr::filter(ystart <= time_max, yend >= time_min)
+  time_breaks <- pretty(d_plot$Time, n = 10)
+
+  ggplot(d_plot, aes(x = Value_plot, y = Time, shape = Type, color = Type, alpha = Type)) +
+    geom_rect(
+      data = rects_filtered,
+      aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
+      inherit.aes = FALSE, alpha = 0.35
+    ) +
+    geom_path(aes(group = Type, linetype = Type), linewidth = 0.5) +
+    geom_point(size = 2) +
+    scale_fill_jco(name = "Time Periods", guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(values = c(RAW = "black", SRS = "black")) +
+    scale_shape_manual(values = c(RAW = 16, SRS = 17)) +
+    scale_linetype_manual(values = c(RAW = "solid", SRS = "dashed")) +
+    scale_alpha_manual(name = "Type", values = c(1, .5)) +
+    # Primary RAW axis (bottom), secondary SRS axis (top) using inverse transform
+    scale_x_continuous(
+      name = "Hill number",
+      sec.axis = sec_axis(~ (.-b)/a, name = "Hill number (SRS)")
+    ) +
+    scale_y_reverse(breaks = time_breaks, labels = time_breaks, name = "Time (Years BP)") +
+    coord_cartesian(ylim = c(time_max, time_min)) +
+    labs(title = paste("Alpha Diversity:", metric_name)) +
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.text.y  = element_text(size = 12, colour = "black"),
+      axis.text.x  = element_text(size = 11, colour = "black"),
+      axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
+      axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
+      plot.title   = element_text(size = 16, face = "bold", colour = "black"),
+      legend.title = element_text(size = 14, face = "bold", colour = "black"),
+      legend.text  = element_text(size = 12, colour = "black"),
+      legend.position = "right",
+      axis.ticks.x.top = element_line(),   # show ticks on top axis
+      axis.text.x.top  = element_text(size = 11, colour = "black")
+    )
+}
+
+
+plot_gamma_dual_horizontal <- function(gamma_raw, gamma_srs, rects, filename) {
+  df_long <- prep_gamma_long(gamma_raw, gamma_srs)
+
+  p_shan <- plot_metric_dual_gamma(df_long, "Shannon", rects) + ggplot2::labs(title = "Shannon")
+  p_simp <- plot_metric_dual_gamma(df_long, "Simpson", rects) + ggplot2::labs(title = "Simpson") +
+    ggplot2::theme(
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y  = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank()
+    )
+
+  p_all <- (p_shan | p_simp) +
+    patchwork::plot_layout(guides = "collect") &
+    ggplot2::theme(legend.position = "right",
+                   plot.title = ggplot2::element_text(size = 16, face = "bold"))
+
+  p_all <- p_all + patchwork::plot_annotation(
+    title = "Gamma Diversity",
+  )
+
+  ggplot2::ggsave(
+    filename = filename,
+    plot = p_all,
+    path = here::here("analysis", "figures"),
+    width = 3900, height = 4900, units = "px", dpi = 300
+  )
+  message("✅ Dual-axis gamma diversity (horizontal) plot saved: ", filename)
+}
+
+
+
+# 12. Generate and save the combined figure (Shannon | Simpson)
+gamma_raw <- compute_gamma(Listdf_raw, "RAW")
+gamma_srs <- compute_gamma(Listdf_SRS, "SRS")
+
+plot_gamma_dual_horizontal(
+  gamma_raw = gamma_raw,
+  gamma_srs = gamma_srs,
+  rects     = rects,
+  filename  = "004-gamma-diversity-RAW-vs-SRS-dual-axis-horizontal.jpg"
+)
+
+
+
+
+
+
+
+
