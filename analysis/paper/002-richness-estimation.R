@@ -166,19 +166,10 @@ results <- map_dfr(names(Listdf_raw), function(time_name) {
   obs_rich <- sum(rowSums(mat) > 0)
   cov <- tryCatch(Coverage(mat), error = function(e) NA)
 
-  Weights <- colSums(mat)
-  Weights <- Weights / sum(Weights)
-  MC <- tryCatch(MetaCommunity(mat, Weights), error = function(e) NULL)
-
-  richness <- NA
-  if (!is.null(MC)) {
-    richness <- tryCatch(Richness(MC$Ns, Correction = "Chao1"), error = function(e) NA)
-  }
-
   tibble(
     Time = as.numeric(time_name),
-    Metric = c("Observed Richness", "Coverage", "Estimated Richness"),
-    Value = c(obs_rich, cov, richness)
+    Metric = c("Observed Richness", "Coverage"),
+    Value = c(obs_rich, cov)
   )
 })
 
@@ -188,7 +179,7 @@ if (nrow(results) == 0) stop("No valid bins for richness estimation.")
 # 10. Plot richness and coverage metrics
 # ==============================================================
 results <- results %>%
-  mutate(Metric = factor(Metric, levels = c("Observed Richness", "Coverage", "Estimated Richness")))
+  mutate(Metric = factor(Metric, levels = c("Observed Richness", "Coverage")))
 
 plot_min <- min(results$Time)
 plot_max <- max(results$Time)
@@ -202,10 +193,10 @@ p <- ggplot(results, aes(x = Value, y = Time)) +
   geom_path(aes(group = Metric), color = "black", linetype = "dashed") +
   geom_point(size = 3, color = "black") +
   facet_wrap(~Metric, scales = "free_x") +
-  scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
+  scale_fill_jco() +
   scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
   labs(title = "Richness and Coverage",
-       x = "Value", y = "Time (Years BP)", fill = "Time Periods") +
+       x = "Value", y = "Time (yr BP)", fill = "Time Periods") +
   coord_cartesian(ylim = c(plot_max, plot_min)) +
   theme_minimal(base_size = 12) +
   theme(
@@ -218,14 +209,15 @@ p <- ggplot(results, aes(x = Value, y = Time)) +
     plot.title = element_text(size = 16, face = "bold", colour = "black"),
     legend.title = element_text(size = 16, face = "bold", colour = "black"),
     legend.text = element_text(size = 12, colour = "black"),
-    legend.position = "right"
+    legend.position = "bottom"
   )
+
 
 # ==============================================================
 # 11. Save figure
 # ==============================================================
 ggsave(filename = "002-richness-estimation.jpg",
        plot = p, path = here("analysis", "figures"),
-       width = 3300, height = 4200, units = "px", dpi = 300)
+       width = 3900, height = 5900, units = "px", dpi = 500)
 
 message("✅ Richness and coverage plot generated successfully.")
