@@ -226,6 +226,48 @@ alpha_srs <- compute_alpha(Listdf_SRS) %>%
 alpha_raw <- compute_alpha(Listdf_RAW) %>%
   mutate(Type = "RAW")
 
+
+# ----- Utilities: build per-metric transforms and plotting -----
+
+library(patchwork)  # for combining plots
+
+# Create long-format data for both RAW and SRS
+prep_alpha_long <- function(alpha_raw, alpha_srs) {
+  raw_l <- alpha_raw %>%
+    pivot_longer(cols = c(Richness, Shannon, Simpson),
+                 names_to = "Metric", values_to = "Value") %>%
+    mutate(Type = "RAW")
+
+  srs_l <- alpha_srs %>%
+    pivot_longer(cols = c(Richness, Shannon, Simpson),
+                 names_to = "Metric", values_to = "Value") %>%
+    mutate(Type = "SRS")
+
+  bind_rows(raw_l, srs_l) %>%
+    mutate(Metric = factor(Metric, levels = c("Richness","Shannon","Simpson")))
+}
+
+# Compute linear transforms per Metric: map SRS -> RAW (x_raw = a * x_srs + b)
+compute_transforms <- function(df_long) {
+  df_long %>%
+    group_by(Metric) %>%
+    summarise(
+      min_raw = min(Value[Type == "RAW"], na.rm = TRUE),
+      max_raw = max(Value[Type == "RAW"], na.rm = TRUE),
+      min_srs = min(Value[Type == "SRS"], na.rm = TRUE),
+      max_srs = max(Value[Type == "SRS"], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      # handle edge cases (constant ranges) safely
+      a = ifelse(max_srs > min_srs,
+                 (max_raw - min_raw) / (max_srs - min_srs),
+                 1),
+      b = min_raw - a * min_srs
+    )
+}
+
+
 # ==============================================================
 # 10. Plotting helper
 # ==============================================================
@@ -274,6 +316,125 @@ plot_alpha <- function(alpha_df, title_sub, filename) {
 
   message("✅ Alpha diversity plot saved: ", filename)
 }
+
+
+
+
+
+
+
+
+
+
+plot_metric_dual <- function(df_long, metric_name, rects) {
+  # filter to the metric
+  d <- df_long %>% filter(Metric == metric_name)
+
+  # compute transform for this metric
+  tr <- compute_transforms(d) %>% filter(Metric == metric_name)
+  a <- tr$a[1]; b <- tr$b[1]
+
+  # transform SRS values into RAW x-space for plotting
+  d_plot <- d %>%
+    mutate(Value_plot = ifelse(Type == "SRS", a * Value + b, Value))
+
+  # axis range on RAW scale
+  x_min <- min(d_plot$Value_plot, na.rm = TRUE)
+  x_max <- max(d_plot$Value_plot, na.rm = TRUE)
+  time_min <- min(d_plot$Time, na.rm = TRUE)
+  time_max <- max(d_plot$Time, na.rm = TRUE)
+  rects_filtered <- rects %>% filter(ystart <= time_max, yend >= time_min)
+  time_breaks <- pretty(d_plot$Time, n = 10)
+
+  # Build plot
+  ggplot(d_plot, aes(x = Value_plot, y = Time, shape = Type, color = Type, alpha = Type)) +
+    geom_rect(
+      data = rects_filtered,
+      aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
+      inherit.aes = FALSE, alpha = 0.35
+    ) +
+    geom_path(aes(group = Type, linetype = Type), linewidth = 0.5) +
+    geom_point(size = 2) +
+    scale_fill_jco(name = "Time Periods", guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(values = c(RAW = "black", SRS = "black")) +
+    scale_shape_manual(values = c(RAW = 16, SRS = 17)) +
+    scale_linetype_manual(values = c(RAW = "solid", SRS = "dashed")) +
+    scale_alpha_manual(name = "Type", values = c(1, .5)) +
+    # Primary RAW axis (bottom), secondary SRS axis (top) using inverse transform
+    scale_x_continuous(
+      name = "Hill number",
+      sec.axis = sec_axis(~ (.-b)/a, name = "Hill number (SRS)")
+    ) +
+    scale_y_reverse(breaks = time_breaks, labels = time_breaks, name = "Time (Years BP)") +
+    coord_cartesian(ylim = c(time_max, time_min)) +
+    labs(title = paste("Alpha Diversity:", metric_name)) +
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.text.y  = element_text(size = 12, colour = "black"),
+      axis.text.x  = element_text(size = 11, colour = "black"),
+      axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
+      axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
+      plot.title   = element_text(size = 16, face = "bold", colour = "black"),
+      legend.title = element_text(size = 14, face = "bold", colour = "black"),
+      legend.text  = element_text(size = 12, colour = "black"),
+      legend.position = "right",
+      axis.ticks.x.top = element_line(),   # show ticks on top axis
+      axis.text.x.top  = element_text(size = 11, colour = "black")
+    )
+}
+
+
+
+# --- Horizontal (side-by-side) figure with shared legend and dual x-axes ---
+plot_alpha_dual <- function(alpha_raw, alpha_srs, rects, filename) {
+  df_long <- prep_alpha_long(alpha_raw, alpha_srs)
+
+  #p_rich <- plot_metric_dual(df_long, "Richness", rects) +
+  #  labs(title = "Richness")
+  p_shan <- plot_metric_dual(df_long, "Shannon", rects) +
+    labs(title = "Shannon")
+  p_simp <- plot_metric_dual(df_long, "Simpson", rects) +
+    labs(title = "Simpson") +
+    theme(
+      axis.title.y = element_blank(),
+      axis.text.y  = element_blank(),
+      axis.ticks.y = element_blank()
+    )
+
+  # Arrange horizontally, collect legend once, and harmonize plot margins
+  #p_all <- (p_rich | p_shan | p_simp) +
+  p_all <- (p_shan | p_simp) +
+    plot_layout(guides = "collect") &
+    theme(legend.position = "right",
+          plot.title = element_text(size = 16, face = "bold"))
+
+  # Add a global title/subtitle
+  p_all <- p_all + plot_annotation(
+    title = "Alpha Diversity"
+  )
+
+  # Save as a wide, landscape image
+  ggsave(
+    filename = filename,
+    plot = p_all,
+    path = here("analysis", "figures"),
+    width = 3900, height = 4900, units = "px", dpi = 500
+  )
+  message("✅ Dual-axis alpha diversity (horizontal) plot saved: ", filename)
+}
+
+
+# 11. Generate and save one combined figure with dual axes
+plot_alpha_dual(
+  alpha_raw  = alpha_raw,
+  alpha_srs  = alpha_srs,
+  rects      = rects,
+  filename   = "supplementary-S3-alpha-diversity-RAW-vs-SRS-dual-axis.jpg"
+)
+
+
+
+
 
 # ==============================================================
 # 11. Generate and save figures (SRS and RAW)
