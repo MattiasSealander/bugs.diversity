@@ -461,14 +461,12 @@ knitr::include_graphics(here::here("analysis", "figures", "005-ecocodes-terrestr
 #| out.width: "1500px"
 #| fig-cap: "Habitat reconstruction focused on terrestrial environments. Species and abundance data has been summed and calculated for each 500-year bin a sample intersects. Habitat reconstructions are based on the BugsCEP ecocodes (Buckland 2007:102), visualised both as abundance weighted and species only reconstruction."
 
-quietly(source(here::here("analysis", "paper", "006-ecocodes-britain-coleoptera.R"), encoding = "UTF-8"))
+quietly(source(here::here("analysis", "paper", "006-ecocodes-britain.R"), encoding = "UTF-8"))
 quietly(source(here::here("analysis", "paper", "007-oxygen-corr-script.R"), encoding = "UTF-8"))
+quietly(source(here::here("analysis", "paper", "pollen_richness_wip.R"), encoding = "UTF-8"))
 
 eco_results <- results_filtered %>% 
   filter(method == "Abundance-weighted")
-  
-gamma <- p_div
-d18o <- p_d18
 
 p_eco <- ggplot(eco_results, aes(x = bin, y = value, fill = ecocode)) +
   geom_bar(
@@ -491,15 +489,43 @@ p_eco <- ggplot(eco_results, aes(x = bin, y = value, fill = ecocode)) +
   theme(
     plot.title    = element_text(size = 16, face = "bold", colour = "black"),
     axis.text.y = element_blank(),
-    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12, face = "bold"),
     strip.text = element_text(size = 14, face = "bold"),
-    legend.position = "none",
+    legend.position = "bottom",
     legend.title = element_text(size = 12, face = "bold"),
     legend.text = element_text(size = 12),
   ) +
   labs(y = "%SumRep", x = "")
 
-combined <- p_div + p_eco + p_d18 +   plot_layout(ncol = 3, widths = c(1, .6, .5))
+
+## 1) Build LEFT block with collected legend (temporarily visible)
+left_group_with_legend <- (p_div + p_eco) +
+  plot_layout(ncol = 2, widths = c(1, 0.6), guides = "collect") &
+  theme(
+    legend.position      = "bottom",
+    legend.justification = "center",
+    legend.box.just      = "center"
+  )
+
+## 2) Extract the legend grob from the left block
+left_legend <- cowplot::get_legend(left_group_with_legend)
+
+## 3) Turn the legend grob into a plot we can place in patchwork
+legend_row <- cowplot::ggdraw(left_legend)
+
+## 4) Make a version of the left block WITHOUT its legend (so we don’t duplicate)
+left_group <- (p_div + p_eco) +
+  plot_layout(ncol = 2, widths = c(1, 0.6), guides = "collect") &
+  theme(legend.position = "none")
+
+## 5) Build RIGHT block (p_pollen keep top legend; p_d18 as-is)
+right_group <- (p_pollen + theme(legend.position = "top")) + p_d18 +
+  plot_layout(ncol = 2, widths = c(1, .9))
+
+## 6) Final compose:
+combined <- (left_group | right_group) + plot_layout(widths = c(1, .7))  
+
+combined <- combined / legend_row + plot_layout(heights = c(1, .2))
 
 # Save combined figure
 ggsave(
