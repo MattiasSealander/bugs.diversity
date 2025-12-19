@@ -34,7 +34,7 @@
 
 # ---- 0. Load packages ----
 pacman::p_load(
-  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci
+  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci, patchwork
 )
 
 # ==============================================================
@@ -228,8 +228,6 @@ alpha_raw <- compute_alpha(Listdf_RAW) %>%
 
 
 # ----- Utilities: build per-metric transforms and plotting -----
-
-library(patchwork)  # for combining plots
 
 # Create long-format data for both RAW and SRS
 prep_alpha_long <- function(alpha_raw, alpha_srs) {
