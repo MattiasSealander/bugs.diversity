@@ -370,7 +370,7 @@ plot_gamma_dual_horizontal <- function(gamma_raw, gamma_srs, rects, filename) {
     filename = filename,
     plot = p_all,
     path = here::here("analysis", "figures"),
-    width = 3900, height = 4900, units = "px", dpi = 300
+    width = 3900, height = 4900, units = "px", dpi = 500
   )
   message("✅ Dual-axis gamma diversity (horizontal) plot saved: ", filename)
 }
