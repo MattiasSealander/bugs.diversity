@@ -258,9 +258,7 @@ results_filtered$ecocode <- factor(results_filtered$ecocode, levels = ecocode_le
 # ==============================================================
 # 11. Generate figure
 # ==============================================================
-time_min <- 0
-time_max <- 16000
-time_breaks <- seq(time_min, time_max, by = 1000)
+time_breaks <- seq(0, 16000, by = 1000)
 
 p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
   geom_bar(
@@ -277,7 +275,7 @@ p <- ggplot(results_filtered, aes(x = bin, y = value, fill = ecocode)) +
   theme_bw() +
   theme(
     axis.text.y = element_text(size = 10),
-    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12, face = "bold"),
     strip.text = element_text(size = 14, face = "bold"),
     legend.position = "bottom",
     legend.title = element_text(size = 12, face = "bold"),
