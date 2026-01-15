@@ -34,7 +34,11 @@
 
 # ---- 0. Load packages ----
 pacman::p_load(
+<<<<<<< HEAD:analysis/paper/003-alpha-diversity.R
   data.table, tidyverse, here, IRanges, SRS, entropart, ggsci, purrr, patchwork
+=======
+  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci, patchwork
+>>>>>>> ffd7d96ed18b574bd7ef3496567038fe40d3a324:analysis/paper/supplementary-S3-alpha-diversity.R
 )
 
 # ==============================================================
@@ -230,7 +234,13 @@ alpha_raw <- compute_alpha(Listdf_RAW) %>%
 # 10. Prepare transform and dual-axis plotting functions
 # ==============================================================
 
+<<<<<<< HEAD:analysis/paper/003-alpha-diversity.R
 # 10.1 Long-format binder
+=======
+# ----- Utilities: build per-metric transforms and plotting -----
+
+# Create long-format data for both RAW and SRS
+>>>>>>> ffd7d96ed18b574bd7ef3496567038fe40d3a324:analysis/paper/supplementary-S3-alpha-diversity.R
 prep_alpha_long <- function(alpha_raw, alpha_srs) {
   raw_l <- alpha_raw %>%
     pivot_longer(cols = c(Richness, Shannon, Simpson),
