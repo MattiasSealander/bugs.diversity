@@ -54,12 +54,13 @@ filters:
   - ../templates/scholarly-metadata.lua
   - ../templates/author-info-blocks.lua
   - ../templates/pagebreak.lua
+  - ../templates/quarto-landscape.lua
 bibliography: references.bib
 csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
 abstract: |
   Text of abstract
 keywords: |
-  palaeoentomology; biodiversity; ecology; Holocene; Europe
+  palaeoentomology; biodiversity; ecology; Holocene; British Isles
 highlights: |
   These are the highlights. 
 ---
@@ -236,9 +237,18 @@ LH_samples <- hits %>%
 
 # Introduction
 
-The last decades have seen a sharp increase in large-scale synthesis studies utilizing existing “Big Data” [@hoffman_etal2021; @pollo_etal2025; @xing_fayle2021], providing systematic reviews and meta-analyses that model multi-regional to global change in climate [@lenoir_svenning2015], environment [@morrison_etal2021; @seidl_etal2017], and human impact [@schmid_schiffels2023; @stehphens_etal2019]. This is largely facilitated through the ongoing digitization efforts and increased availability of Open Data in large-scale research data infrastructures [@buckland_sjolander2022; @page_etal2015; @tresp_etal2016; REFS]. 
+In recent decades there have been a proliferation of studies applying a “Big Data” approach [@hoffman_etal2021; @pollo_etal2025; @xing_fayle2021]. These systematic reviews and meta-analyses model climate change [@lenoir_svenning2015], environmental dynamics [@morrison_etal2021; @seidl_etal2017], and human impact at multi-region to global scales [@schmid_schiffels2023; @stephens_etal2019; @woodbridge_etal2021]. This is largely facilitated through advances in remote sensing, the expansion of biodiversity databases (e.g., GBIF; <https://www.gbif.org/>), improved open data policies [@burgelman_etal2019], and the growth of citizen science platforms [@buckland_sjolander2022; @cavender_bares_etal2022; @fraisl_etal2022; @page_etal2015; @ramachandran_etal2021; @tresp_etal2016].
 
-In modern times there has been an observed decline in insect biodiversity [@hallman_etal2017; @schachat_labandeira2020; @vanklink_etal2020] a phenomenon which has been attributed to the intensification of agriculture [@habel_etal2019]; @raven_wagner2021]. The anthropogenic influence on insect biodiversity is not new, however, and has not always been a negative (at least for the insects) [@pilotto_etal2022; REFS]. It is still unknown whether the modern-day decline is a global phenomenon, and there is a need for further understanding of how insect community changes are affected by the modern-day anthropogenic impact (Luke et al. 2023). Certainly, a better understanding of how human impact has affected past insect communities will be valuable to assess the outcomes of future actions.   
+Access to high-quality aggregated datasets with paleo-temporal coverage is instrumental to address some of the more pressing questions related to insect biodiversity, such as the modern-day decline in insect biomass and loss of pollinating insect species [@hallman_etal2017; @muller_etal2024; @powney_etal2019; @schachat_labandeira2020; @vanklink_etal2020]. This decline has largely been attributed to human influence and the intensification of agriculture [@habel_etal2019; @raven_wagner2021], however, there is a need for further exploration of the potential drivers of insect declines [@sanchez_bayo_wyckhuys2019]. To do so, it is important to have a good understanding of insect biodiversity before modern-day extensive human impact, as well as how this relationship has developed across millennia. Anthropogenic influence has not always been a net-negative for insects, as evidenced by synanthropic species benefiting from man-made environments [@panagiotakopulu_buckland2017]. The development of agriculture, with increased sedentariness and urbanisation, also provided a suitable environment for a wide array of fauna, as well as enabled their distribution to the far corners of the world [e.g. @panagiotakopulu_etal2007; @smith_etal2020].
+
+The evolution of the European landscape, and the intensification of human impact throughout the Holocene, have long been central themes in palynological research [@giesecke_etal2019; @mitchell2005; REFS]. Leveraging extensive quantitative pollen datasets—accessible via the European Pollen Database (EPD) now integrated into Neotoma (https://neotomadb.org)—advanced land-cover reconstructions (e.g. REVEALS, LOVE) provide a dynamic perspective on forest structure and its transformation over the past 10 ka [@githumbi_etal2022]. The integration of palaeoentomological evidence can provide valuable environmental information not easily detected in the pollen record, such as open-ground or agropastoral indicators, as well more direct evidence of human presence via synanthropic species [@woodbridge_etal2021; panagiotakopulu_buckland2017]. 
+
+The British Isles is well represented in European palaeoentomological datasets and the English-language literature [@buckland2014] fig-sites-overview. Despite the accessibility of these data [@buckland_etal2018; @williams_etal2018], large-scale quantitative approaches to palaeoentomological research remain scarce. Studies tend to focus on qualitative syntheses of faunal developments or limited inter-site comparisons. Whitehouse’s [-@whitehouse2006] review of Lateglacial–Holocene forest beetle assemblages documents their introduction, continuity, and extirpation on the British Isles. However, the paucity of Early Holocene data hampers detailed reconstruction of the transition from the light-forest Lateglacial landscape to early Holocene woodland [@buckland2014: 275; @whitehouse2006: 1757-1758]. Palaeoentomological data seem to indicate that forests developed early in the Holocene, reaching their maximum extent around 7–6 ka BP [@coope1990]. This pattern aligns with recent pollen-based land-cover reconstructions [@githumbi_etal2022], which also highlight persistent open landscapes in northern Scotland—a region notably lacking palaeoentomological data [whitehouse2006: 1775] fig-sites-overview.
+
+Synanthropic insects have been recovered from archaeological sites dating as far back as the Mesolithic (ca. 11 ka BP). Early synanthropic taxa, however, occupied a broad range of habitats and likely originated from natural contexts, as suggested by Smith et al. [@smith_etal2020]. By the Late Bronze Age period (ca. 3 ka BP), new synanthropic species associated with pasture and livestock management appear, providing clearer evidence of human influence on the landscape [@woodbridge_etal2021]. This development coincides with a marked reduction in forest cover from the mid-Holocene onwards, as indicated by pollen-based studies [e.g. @githumbi_etal2022], and with the replacement of forest beetle taxa by species indicative of more managed environments [@whitehouse2006]. From ca. 2 ka BP onwards the synanthropic fauna show strong urban signals [@smith_etal2020], along with the introduction of pests related to the storage of grain [@panagiotakopulu_buckland2017].
+
+Pilotto et al.s’ [-@pilotto_etal2022] study is a recent example of a large-scale exploratory approach to insect data. The analysis is based on beetle data recovered from palaeoecological contexts in NW Europe and uses network clustering. The model was run on both the species specific data, as well as the interpreted habitat information [Bugs ecocodes; see @buckland2007]. The results reaffirmed key transitional periods as being 10 ka BP and 3.5 ka BP when considering species information, however, further transitions were identified when considering habitat information. These suggest changes in the environment that impact the faunal composition, which necessitate further investigation.
+ 
 
 # Aims
 
@@ -247,7 +257,7 @@ The aim of this paper is to study biodiversity trends of Coleoptera during perio
 
 # Materials and Methods
 
-The analysis is based on data retrieved from the BugsCEP constituent database (https://bugscep.com) [@buckland_buckland2006] of the open access Strategic Environmental Archaeology Database (SEAD; [sead.se](https://sead.se)) [@buckland_etal2018]. The study area includes the United Kingdom and Ireland during the Late Glacial - Holocene period, which has good coverage within the database [browser.sead.se/palaeoentomology](https://browser.sead.se/palaeoentomology). The study includes a total of `r nrow(sites_eu)` sites from which `r nrow(samples_brit)` samples have been collected. All of the samples come from natural deposits, with little to no signs of direct human influence (e.g. peat bogs, lakes) (@fig-sites-overview).
+The analysis is based on data retrieved from the BugsCEP constituent database (https://bugscep.com) [@buckland_buckland2006] of the open access Strategic Environmental Archaeology Database (SEAD; [sead.se](https://sead.se)) [@buckland_etal2018]. The study area includes the United Kingdom and Ireland during the Late Glacial - Holocene period, which has good coverage within the database [browser.sead.se/palaeoentomology](https://browser.sead.se/palaeoentomology). The study includes a total of `r nrow(sites_eu)` sites from which `r nrow(samples_brit)` samples have been collected. All of the samples come from natural deposits, with little to no signs of direct human influence (e.g. peat bogs, lakes) (fig-sites-overview).
 
 SEAD includes data generated by a variation of dating methods (e.g. radiometric, archaeological periods), with different levels of uncertainty, and have been harmonised to years Before Present (BP) to enable aggregated spatiotemporal analysis (REF). Samples that feature large age ranges, whether the result of long periods of accumulation or uncertainty, contribute noise to the data and make it difficult to discern short-term changes. Therefore, the dataset was filtered temporally, according to the process outlined in [@pilotto_etal2022]. Any samples with a mid-point that dated older than 16 000 years BP, and with an age range larger than 2 000 years, were excluded from the study. In adhering to the same filtering process, it likewise makes comparisons with the results from Pilotto et al.’s study of biotic transitions in Coleopteran communities possible. 
 
@@ -261,206 +271,154 @@ In both rarefaction and SRS a threshold (Cmin) must be set for the new sample de
 
 The RAC function generates visualisations that compare the change in number and abundance of species between pairs of years (in this case 500-year bins) [@avolio_etal2019]. That is to say, each time bin is compared with the preceding one during analysis. RAC calculates five different metrics: species richness, evenness, rank change (change in species rank order), species turnover: gains, species turnover: losses. 
 
-Environmental reconstructions were performed according to the BugsCEP procedure [@buckland2007,:101-117]. The data was summarised for each 500-year bin a sample intersected and standardised across each habitat type. The standardization shows each habitat as a proportion of the sum of environments included in the analysis (%SumRep). It is important to note that each taxa may be counted for more than one habitat. Two separate reconstructions were generated and evaluated; one that is based on presence only counts of taxa and one that is abundance weighted. 
+Environmental reconstructions were performed according to the BugsCEP procedure [@buckland2007: 101-117]. The data was summarised for each 500-year bin a sample intersected and standardised across each habitat type. The standardization shows each habitat as a proportion of the sum of environments included in the analysis (%SumRep). It is important to note that each taxa may be counted for more than one habitat. Two separate reconstructions were generated and evaluated; one that is based on presence only counts of taxa and one that is abundance weighted. 
 
 
 # Results
 
+## Spatiotemporal Distribution
  \linebreak
 
 ```{r}
 #| label: fig-sites-overview
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "2400"
-#| out.width: "2400px"
-#| fig-cap: !expr 'paste("Distribution of sites with samples from natural deposits within Europe (n = ", nrow(sites_eu), ") filtered to the temporal range of the study. Most of the sites (n =", nrow(sites_brit), ") are located within the study area of the United Kingdom and Ireland.")'
+#| out.height: "6in"
+#| out.width: "6in"
+#| fig-cap: !expr paste("Distribution of sites with samples from palaeoecological contexts within Europe (n = ", nrow(sites_eu), ") filtered to the temporal range of the study. Most of the sites (n =", nrow(sites_brit), ") are located within the study area of the United Kingdom and Ireland.")
 
-quietly(source(here::here("analysis", "paper", "001-sites-overview-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "001-sites-overview-britain.jpg"), error = FALSE)
+# Run subscript
+quietly(source(here::here("analysis", "paper", "001-sites-overview.R"), encoding = "UTF-8"))
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "001-sites-overview.jpg"), error = FALSE)
 ```
 
 
  \linebreak
- 
-The Bugs dataset in SEAD is biased towards NW Europe, and in particular the British Isles (Figure 1) (Buckland 2014). Of the 143 European sites that matched the requirements, ~ 75% are located within the United Kingdom and Ireland. Temporally there is a bimodal distribution of the data, with the Late Glacial (14 000 - 10 000 BP) and Subboreal - Subatlantic period  (5 500 - 2000 BP) being better represented at all sampling levels (site - sample - taxa abundance) (Figure 2; Supplementary XX). The first half of the Holocene is comparatively underrepresented in the data.
+
+The Coleopteran dataset in SEAD exhibits a pronounced geographical bias toward northwestern Europe, particularly the British Isles (Figure 1) [@buckland2014]. Of the `r nrow(sites_eu)` European sites meeting the selection criteria, approximately `r round((nrow(samples_brit) / nrow(sites_eu)) * 100)`% are located within the United Kingdom and Ireland. Temporally, the dataset displays a bimodal distribution, with the Lateglacial and Mid-to-Late Holocene periods more comprehensively represented across all sampling levels (site, sample, and taxon abundance) @fig-sample-dates. In contrast, sampling coverage for the 10 ka – 6 ka BP period remains comparatively limited.
 
  \linebreak
 
 ```{r}
 #| label: fig-sample-dates
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "1800px"
-#| out.width: "2400px"
+#| out.height: "7in"
+#| out.width: "6.5in"
 #| fig-cap: "a) Summary of sites, samples and total abundance for each 500-year bin between 16 000 BP and the modern day. The data is bimodally distributed across the study period, with peaks around the Late glacial and the last ~ 5 000 years. The decrease in datasets that cover 10 000 – 6 000 BP highlights a need for research and data submissions. b) Sample age ranges for the samples from the United Kingdom and Ireland, ordered from oldest to youngest. "
 
-quietly(source(here::here("analysis", "paper", "001-sample-date-distribution-britain.R"), encoding = "UTF-8"))
+# Run subscript
+quietly(source(here::here("analysis", "paper", "001-sample-date-distribution.R"), encoding = "UTF-8"))
+# Import figure
 knitr::include_graphics(here::here("analysis", "figures", "001-sample-site-abundance-summary.jpg"), error = FALSE)
 ```
 
  \linebreak
 
-Although most samples intersect between 1 - 3 time bins, there is a small subset that are counted for up to 5 bins (see Supplementary XX). …Input from Francesca regarding how analysis age ranges were calculated in SEAD…Might be that the dating information is at a site level, and then applied to samples…not sure. 
-
-
-## Late Glacial (ca. 16 000 – 11 500 Years BP)
-
-The observed species richness (raw values) shows a steady increase across the Late Glacial period, with a clear decline when entering the Early Holocene (Figure 3). The estimated coverage, i.e. the probability that an individual belongs to a known species in the 500-year bin, is high (0-8 - 0.9) for most of the period. The average sample richness likewise shows a steady increase across the Late Glacial, both in raw and standardized values (Figure 4). The biggest differences can be seen at ca. 16 000 years BP, which features more sparse sampling, with lower counts of species and abundance of individuals than when compared to the later 500-year bins (Supplementary XX). With this in mind, standardized species richness indicates an initial decline that then stabilises throughout the Late Glacial period. 
-
-The alpha diversity, i.e. average sample diversity, shows little variation in the raw abundance data throughout the Late Glacial (Figure 5). There is a slight decline in the effective number of species (incl. common (Shannon) and abundant (Simpson) species) ca. 14 000 years BP, after which the diversity remains largely steady up until the Holocene period. The standardized data, however, shows a different pattern (Figure 6). Although effective species richness steadily increases across the Late Glacial period, the number of common and abundant species shows an initial decline. It is only following ca. 12 500 years BP that there is a steady increase in common and abundant species, before the start of the Holocene period.
-
-A similar development of species richness can be seen in the gamma diversity of the British Isles (Figure 7). There is a steady increase in the effective number of species from 16 000 years BP, peaking towards the end of the Late Glacial (ca. 11 500 years BP). 
-
+The observed species richness (raw values) largely mirrors the abundance patterns @fig-sample-dates\ignorespaces a, with peaks around 11.5 ka and 3.5 ka BP (Figure 3). The estimated coverage, i.e. the probability that an individual belongs to a known species in the 500 yr bin, is the highest during the Lateglacial period (~ 0.8 - 0.9). Around 10 ka BP there is a sharp decline in coverage, with the remaining parts of the Early Holocene period characterized by some variation. The Mid-to-Late Holocene period features overall lower coverage values than preceding periods with a strong decline during the last 1 ka. 
 
  \linebreak
 
 ```{r}
 #| label: fig-coverage
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "2600px"
-#| out.width: "1800px"
+#| out.height: "7.5in"
+#| out.width: "5.5in"
 #| fig-cap: "Coverage and richness estimation using bias-correction. Observed Richness is the total abundance of unique species found within each 500-year bin. Coverage estimates the completeness of the 500-year bin, i.e. the proportion of individuals belonging to the observed species. Estimated Richness shows the extrapolated richness using Chao (1984) correction."
 
-quietly(source(here::here("analysis", "paper", "002-richness-estimation-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "002-richness-estimation-britain.jpg"), error = FALSE)
+# Run subscript
+quietly(source(here::here("analysis", "paper", "002-richness-estimation.R"), encoding = "UTF-8"))
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "002-richness-estimation.jpg"), error = FALSE)
 ```
 
  \linebreak
 
-```{r}
-#| label: fig-richness
-#| cache: true
-#| aspect-ratio: 1
-#| fig.align: "center"
-#| out.height: "2600px"
-#| out.width: "1800px"
-#| fig-cap: "Comparison of species richness using raw, rarefied, and SRS standardized values. Mean richness for each age bin is calculated based on all samples that intersect a 500-year bin. Standard error represented as a grey ribbon. Cmin for rarefaction and SRS is 10 individuals per sample."
+# Alpha Diversity
 
-quietly(source(here::here("analysis", "paper", "002-richness-comparison-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "002-richness-comparison-britain.jpg"), error = FALSE)
-```
+As can be seen in @fig-alpha, there is a decrease in sample-based diversity over the course of the Lateglacial period. This is reflected in both the raw and standardized data, with the latter showing a more gradual decrease following 16 ka BP. Alpha diversity remains somewhat stable until ca. 10 ka BP, when both Shannon and Simpson values indicate an increase in diversity. Following this increase the raw abundance data indicates a significant spike in diversity that peaks around 8 ka BP, before it begins to decline once more. Standardized values, however, quickly declines following 10 ka BP and remains low until the later parts of the Mid-Holocene.
 
  \linebreak
 
 ```{r}
-#| label: fig-alpha-raw
+#| label: fig-alpha
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "2600px"
-#| out.width: "1800px"
+#| out.height: "7.5in"
+#| out.width: "5.5in"
 #| fig-cap: "Hill numbers of alpha diversity (effective number of species) for each 500-year time bin based on raw abundance values. The value represents the mean diversity of all samples (weighted by abundance) that intersect a time bin. Richness = effective species richness, Shannon = effective number of common species, Simpson = effective number of abundant species."
 
-quietly(source(here::here("analysis", "paper", "002-alpha-diversity-britain-raw.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "002-alpha-diversity-britain-raw.jpg"), error = FALSE)
+# Run subscript
+#quietly(source(here::here("analysis", "paper", "003-alpha-diversity.R"), encoding = "UTF-8"))
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "003-alpha-diversity.jpg"), error = FALSE)
 ```
 
  \linebreak
 
-## Early Holocene (ca. 11 500 – 6 000 Years BP)
+Around 6 ka BP both raw and standardized values show increasing diversity throughout the remainder of the Mid-Holocene period. However, entering the Late Holocene the raw and standardized data once more differentiates. The raw Shannon values peak at ca. 4 000 ka BP, before richness in both orders begin a decline in diversity that continues throughout the Late Holocene. Standardized values, however, show a delayed pattern than compared to the raw data. Diversity drops following the Mid-Holocene and does not indicate a reversal of this trend until ca. 3.5 ka BP. Diversity continues to rise for about 1 ka before it once more enters a period of decline which lasts until the modern-day.
 
-The Early Holocene period is characterised by an overall lower species richness than the Late Glacial period. Despite this the overall estimated coverage for the period remains fairly high, around 0.6 - 0.7, reaching  its peak at 8 500 years BP. These results need to be considered with the biased sampling in mind, however (Figure 2). The entire Early Holocene period is covered by a total of 39 samples that intersect at least one of 500-year time bins. This can be contrasted with the preceding Late Glacial period that includes 159 samples, or the Late Holocene with 316 samples. 
+# Gamma Diversity
 
-Although the observed richness is low, the standardized richness reflects a different pattern (Figure 4). The standardized species richness shows an increase at 10 000 years BP, compared to adjacent 500-year bins. A second peak in species richness also occurs at 8 500 - 8 000 BP. It is worth highlighting that 8 000 BP features the lowest abundance values for the dataset (Supplementary XX). 
+The gamma diversity for the raw and standardized data largely describes similar changes in diversity for the British Isles [@fig-gamma]. One major difference, however, can be seen in the Lateglacial period. The raw data shows a steady increase in diversity across both orders, with a slight decrease at 13 ka BP. The standardized data, however, show similarly high values around 16 ka BP as was seen in the alpha diversity. The main difference being that the gamma diversity has less evenness, dominated by higher Simpson values. Both Shannon and Simpson values decline over the course of the Lateglacial period, reaching their lowest values for the period at 13 ka BP.
 
-This decline is expected based on the overall lower sampling for the 10 000 - 6 000 BP period (Figure 2). 
-
-
-Both of these 500-year bins are characterised by loss of species from the preceding bin (Figure 8), along with a decrease in species richness (Figure 3). This changes once standardized according to both rarefaction and SRS.  
-
- \linebreak
-
-```{r}
-#| label: fig-alpha-srs
-#| cache: true
-#| aspect-ratio: 1
-#| fig.align: "center"
-#| out.height: "2600px"
-#| out.width: "1800px"
-#| fig-cap: "Hill numbers of alpha diversity (effective number of species) for each 500-year time slice based on SRS standardized values. The value represents the mean diversity of all samples (weighted by abundance) that intersect a time bin. Richness = effective species richness, Shannon = effective number of common species, Simpson = effective number of abundant species."
-
-quietly(source(here::here("analysis", "paper", "002-alpha-diversity-britain-srs.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "002-alpha-diversity-britain-srs.jpg"), error = FALSE)
-```
+After 13 ka BP both raw and standardized data shows a period of diversity increase up until ca. 10 ka BP [@fig-gamma]. Although the raw data shows less evenness following 11.5 ka BP, both Shannon and Simpson values in the SRS data follow each other during the initial part of the Early Holocene. Following 10 ka BP there is a drastic decline in diversity values up until ca. 8.5 ka BP, after which they begin recovering once more. Throughout the Mid-Holocene, and first parts of the Late Holocene, both raw and standardized values follow a similar pattern of diversity increase. There is a small decline in the number of abundant species around 4.5 ka BP, but otherwise the raw data shows a steady increase until ca. 3 ka BP, after which it enters a period of decline. The SRS values largely follow a similar trend, but with a slightly faster decline in Simpson values following 3.5 ka BP. 
 
  \linebreak
 
 ```{r}
 #| label: fig-gamma
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "4200px"
-#| out.width: "3300px"
-#| fig-cap: " Hill numbers of gamma diversity (effective number of species) for each 500-year time slice, calculated on both raw abundance and SRS standardized values. Each value represents the total diversity (samples abundance weighted) for each time bin. Richness = effective species richness, Shannon = effective number of common species, Simpson = effective number of abundant species."
+#| out.height: "7.5in"
+#| out.width: "5.5in"
+#| fig-cap: " Hill numbers of gamma diversity (effective number of species) for each 500-year time slice, calculated on both raw abundance and SRS standardized values. Each value represents the total diversity (samples abundance weighted) for each time bin. Shannon = effective number of common species, Simpson = effective number of abundant species."
 
-quietly(source(here::here("analysis", "paper", "002-gamma-diversity-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "002-gamma-diversity-britain.jpg"), error = FALSE)
+# Run subscript
+quietly(source(here::here("analysis", "paper", "003-gamma-diversity.R"), encoding = "UTF-8"))
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "003-gamma-diversity.jpg"), error = FALSE)
 ```
+
+ \linebreak
+
+# Species Turnover
 
  \linebreak
 
 ```{r}
 #| label: fig-rac
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "4200px"
-#| out.width: "3300px"
+#| out.height: "7.5in"
+#| out.width: "6.5in"
 #| fig-cap: "Rank Abundance Curves (RAC) calculated on raw values from the British Isles (Avolio et al. 2019). Calculations are made on the summed abundances of all samples that intersect a 500-year time bin. In RAC the change in five parameters of community change (Species richness, Rank abundance, Evenness, Species gain, Species loss) is analysed between two time points."
 
-quietly(source(here::here("analysis", "paper", "004-rank-abundance-curves-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "004-rank-abundance-curves-britain.jpg"), error = FALSE)
+# Run subscript
+quietly(source(here::here("analysis", "paper", "005-rank-abundance-curves.R"), encoding = "UTF-8"))
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "005-rank-abundance-curves.jpg"), error = FALSE)
 ```
 
  \linebreak
 
-## Late Holocene (6 000 – 500 BP)
+A summary of the species turnover can be seen in @fig-div-comparison. As noted in the gamma diversity [@fig-gamma], the start of the study period features low evenness with a high appearance of new species. After ca. 15.5 ka BP, however, there is little change in the summary metrics aside from a small increase in the evenness. Around 10 ka BP there is a significant loss in species richness, along with an increase in evenness and species reordering. This coincides with the decline in Shannon values for gamma diversity based on raw abundance data [@fig-gamma], along with an increase in Simpson richness. This suggests a loss of rarer species, leading to an increased evenness, along with a possible reordering of the dominant species.
 
+From 10 ka BP on the RAC shows some variation during the Early Holocene [@fig-div-comparison], but no clear patterns of interpretation. The most significant change is a drop in the influx of new species at 8.5 ka BP, which coincides with the lowest Shannon and Simpson values in Figure 6. Around 6 ka BP there is a marked increase in species richness, which also leads to a loss in evenness and rank reordering. Considering the difference in magnitude between Shannon and Simpson values for the gamma diversity at this same time, this may also be the case of a wider pool of unevenly distributed species. Following this shift there is a period of some stability when entering the Late Holocene period. The previously noted increase in gamma diversity at ca. 3 ka BP, followed by a period of diversity loss [@fig-gamma], can also be traced in the RAC [@fig-rac]. An increase in species richness and lowered evenness is followed by some instability, with shifting richness increase and decrease. A clear change occurs at 1.5 ka BP, however, with a spike in species loss, leading to a smaller but more evenly distributed species pool, which continues the trend of a loss in diversity until the modern-day.
 
-```{r}
-#| label: fig-eco
-#| cache: true
-#| aspect-ratio: 1
-#| fig.align: "center"
-#| out.height: "2100px"
-#| out.width: "1500px"
-#| fig-cap: "Habitat reconstruction based on samples from natural deposits in the United Kingdom and Ireland. Species and abundance data has been summed and calculated for each 500-year bin a sample intersects. Habitat reconstructions are based on the BugsCEP ecocodes (Buckland 2007:102), visualised both as abundance weighted and species only reconstruction."
-
-quietly(source(here::here("analysis", "paper", "005-ecocodes-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "005-ecocodes-britain.jpg"), error = FALSE)
-```
-
- \linebreak
+::: {.landscape}
 
 ```{r}
-#| label: fig-eco-terr
+#| label: fig-div-comparison
 #| cache: true
-#| aspect-ratio: 1
 #| fig.align: "center"
-#| out.height: "2100px"
-#| out.width: "1500px"
-#| fig-cap: "Habitat reconstruction focused on terrestrial environments. Species and abundance data has been summed and calculated for each 500-year bin a sample intersects. Habitat reconstructions are based on the BugsCEP ecocodes (Buckland 2007:102), visualised both as abundance weighted and species only reconstruction."
+#| out.height: "10in"
+#| out.width: "14in"
+#| fig-cap: "A comparison of beetle diversity and habitat reconstruction against pollen diversity for the British Isles. Relative temperature change based on Greenland oxygen isotope data included as a reference (Seierstad et al. 2014)."
 
-quietly(source(here::here("analysis", "paper", "005-ecocodes-terrestrial-britain.R"), encoding = "UTF-8"))
-knitr::include_graphics(here::here("analysis", "figures", "005-ecocodes-terrestrial-britain.jpg"), error = FALSE)
-```
-
-
-```{r}
-#| label: fig-corr-test
-#| cache: true
-#| aspect-ratio: 1
-#| fig.align: "center"
-#| out.height: "2100px"
-#| out.width: "1500px"
-#| fig-cap: "Habitat reconstruction focused on terrestrial environments. Species and abundance data has been summed and calculated for each 500-year bin a sample intersects. Habitat reconstructions are based on the BugsCEP ecocodes (Buckland 2007:102), visualised both as abundance weighted and species only reconstruction."
-
+quietly(source(here::here("analysis", "paper", "003-gamma-diversity.R"), encoding = "UTF-8"))
 quietly(source(here::here("analysis", "paper", "006-ecocodes-britain.R"), encoding = "UTF-8"))
 quietly(source(here::here("analysis", "paper", "007-oxygen-corr-script.R"), encoding = "UTF-8"))
 quietly(source(here::here("analysis", "paper", "pollen_richness_wip.R"), encoding = "UTF-8"))
@@ -498,38 +456,68 @@ p_eco <- ggplot(eco_results, aes(x = bin, y = value, fill = ecocode)) +
   labs(y = "%SumRep", x = "")
 
 
-## 1) Build LEFT block with collected legend (temporarily visible)
-left_group_with_legend <- (p_div + p_eco) +
-  plot_layout(ncol = 2, widths = c(1, 0.6), guides = "collect") &
-  theme(
-    legend.position      = "bottom",
-    legend.justification = "center",
-    legend.box.just      = "center"
-  )
+# Bottom legend should show only FILL
+legend_bottom_src <- p_shan +
+  guides(
+    fill     = guide_legend(ncol = 1),  # vertical stack; adjust to taste
+    shape    = "none",                  # <-- suppress SHAPE here
+    linetype = "none",
+  ) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 12, face = "bold"))
 
-## 2) Extract the legend grob from the left block
-left_legend <- cowplot::get_legend(left_group_with_legend)
+# --- 2) Extract the two legends ---
+legend_bottom <- cowplot::get_legend(legend_bottom_src)
+eco_bottom <- cowplot::get_legend(p_eco)
 
-## 3) Turn the legend grob into a plot we can place in patchwork
-legend_row <- cowplot::ggdraw(left_legend)
 
-## 4) Make a version of the left block WITHOUT its legend (so we don’t duplicate)
-left_group <- (p_div + p_eco) +
-  plot_layout(ncol = 2, widths = c(1, 0.6), guides = "collect") &
+p_shan2 <- p_shan +
+  labs(title = "Gamma Diversity",
+         subtitle = "Shannon") +
+    guides(
+    shape    = guide_legend(nrow = 1, title = NULL, position = "top"),  # center-friendly one-row legend
+    linetype = guide_legend(nrow = 1, title = NULL, position = "top"),
+    fill     = "none",               # <-- suppress FILL here
+  ) +
+  theme(plot.subtitle    = element_text(size = 12, colour = "black"))
+
+p_simp2 <- p_simp +
+    labs(title = "",
+         subtitle = "Simpson") +
+  theme(legend.position = "none",
+        plot.subtitle    = element_text(size = 12, colour = "black"))
+
+p_eco2 <- p_eco +
   theme(legend.position = "none")
 
-## 5) Build RIGHT block (p_pollen keep top legend; p_d18 as-is)
+left_group <- (p_shan2 + p_simp2 + p_eco2) +
+  plot_layout(ncol = 3)
+
+library(gtable)
+# Trim extraneous whitespace from the legend gtable
+legend_bottom <- gtable::gtable_trim(legend_bottom)
+
+# Compose WITHOUT heavy alignment on grobs (avoid "hv" for legends)
+panels <- cowplot::plot_grid(
+  legend_bottom, eco_bottom,
+  nrow = 1,
+  rel_widths = c(0.30, 0.70),   # tweak to your taste
+  align = "h",                  # horizontal only (safer for grobs)
+  axis  = "tb"                  # top/bottom axes only if needed
+)
+
 right_group <- (p_pollen + theme(legend.position = "top")) + p_d18 +
   plot_layout(ncol = 2, widths = c(1, .9))
 
-## 6) Final compose:
-combined <- (left_group | right_group) + plot_layout(widths = c(1, .7))  
 
-combined <- combined / legend_row + plot_layout(heights = c(1, .2))
+combined <- (left_group + right_group) + plot_layout(nrow = 1, ncol = 4, widths = c(.5, .5, .5, 1))  
+
+combined <- combined / panels + plot_layout(heights = c(1, .2))
+
 
 # Save combined figure
 ggsave(
-  filename = "007-gamma-eco-d18o.jpg",
+  filename = "007-diversity-comparison.jpg",
   plot     = combined,
   path     = fig_dir,
   width = 40,
@@ -538,18 +526,18 @@ ggsave(
   dpi = 300
 )
 
+# Import figure
+knitr::include_graphics(here::here("analysis", "figures", "007-diversity-comparison.jpg"), error = FALSE)
 ```
-
-
- \linebreak
+:::
 
 # Discussion
+<!-- The following line inserts a page break  -->
+\newpage
 
 # Conclusion
 
 # Acknowledgements
-
-<!-- The following line inserts a page break  -->
 
 \newpage
 
