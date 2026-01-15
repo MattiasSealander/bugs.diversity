@@ -165,10 +165,10 @@ ggsave(
   fig_with_legend,
   device = "jpg",
   path = here("analysis", "figures"),
-  width = 40,
-  height = 40,
-  units = "cm",
-  dpi = 300
+  width = 5900,
+  height = 5900,
+  units = "px",
+  dpi = 500
 )
 
 message("✅ Sites have been plotted and figure saved: '001-sites-overview.jpg'")

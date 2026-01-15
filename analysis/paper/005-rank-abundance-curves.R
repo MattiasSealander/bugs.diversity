@@ -176,6 +176,6 @@ p <- ggplot(rac, aes(x = Value, y = bin_numeric)) +
 # ==============================================================
 # 10. Save figure
 # ==============================================================
-ggsave(filename = "004-rank-abundance-curves.jpg",
+ggsave(filename = "005-rank-abundance-curves.jpg",
        plot = p, path = here("analysis", "figures"),
        width = 3300, height = 4200, units = "px", dpi = 300)

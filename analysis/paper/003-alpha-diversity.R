@@ -34,7 +34,7 @@
 
 # ---- 0. Load packages ----
 pacman::p_load(
-  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci
+  data.table, tidyverse, here, IRanges, SRS, entropart, ggsci, purrr, patchwork
 )
 
 # ==============================================================
@@ -165,7 +165,7 @@ srs_long <- as_tibble(srs_out, rownames = "taxon") %>%
   distinct()
 
 # ==============================================================
-# 8. Build list of matrices per bin
+# 8. Build list of matrices
 # ==============================================================
 build_Listdf <- function(df) {
   split(df, df$bin_end) %>%
@@ -180,7 +180,7 @@ Listdf_SRS <- build_Listdf(srs_long)
 Listdf_RAW <- build_Listdf(raw_mat)
 
 # ==============================================================
-# 9. Compute alpha diversity per bin (generic for any list)
+# 9. Compute alpha diversity
 # ==============================================================
 compute_alpha <- function(list_of_mats) {
   purrr::map_dfr(names(list_of_mats), function(time_name) {
@@ -226,12 +226,11 @@ alpha_srs <- compute_alpha(Listdf_SRS) %>%
 alpha_raw <- compute_alpha(Listdf_RAW) %>%
   mutate(Type = "RAW")
 
+# ==============================================================
+# 10. Prepare transform and dual-axis plotting functions
+# ==============================================================
 
-# ----- Utilities: build per-metric transforms and plotting -----
-
-library(patchwork)  # for combining plots
-
-# Create long-format data for both RAW and SRS
+# 10.1 Long-format binder
 prep_alpha_long <- function(alpha_raw, alpha_srs) {
   raw_l <- alpha_raw %>%
     pivot_longer(cols = c(Richness, Shannon, Simpson),
@@ -247,7 +246,7 @@ prep_alpha_long <- function(alpha_raw, alpha_srs) {
     mutate(Metric = factor(Metric, levels = c("Richness","Shannon","Simpson")))
 }
 
-# Compute linear transforms per Metric: map SRS -> RAW (x_raw = a * x_srs + b)
+# 10.2 Per-metric linear transform function (SRS -> RAW (x_raw = a * x_srs + b) )
 compute_transforms <- function(df_long) {
   df_long %>%
     group_by(Metric) %>%
@@ -267,65 +266,9 @@ compute_transforms <- function(df_long) {
     )
 }
 
-
 # ==============================================================
-# 10. Plotting helper
+# 11. Plotting helper
 # ==============================================================
-plot_alpha <- function(alpha_df, title_sub, filename) {
-  df_long <- alpha_df %>%
-    pivot_longer(cols = c(Richness, Shannon, Simpson), names_to = "Metric", values_to = "Value") %>%
-    mutate(Metric = factor(Metric, levels = c("Richness", "Shannon", "Simpson")))
-
-  plot_min <- min(df_long$Time, na.rm = TRUE)
-  plot_max <- max(df_long$Time, na.rm = TRUE)
-  rects_filtered <- rects %>% filter(ystart <= plot_max, yend >= plot_min)
-  time_breaks <- pretty(df_long$Time, n = 10)
-
-  p <- ggplot(df_long, aes(x = Value, y = Time)) +
-    geom_rect(data = rects_filtered,
-              aes(ymin = ystart, ymax = yend, xmin = -Inf, xmax = Inf, fill = col),
-              inherit.aes = FALSE, alpha = 0.5) +
-    geom_path(aes(group = Metric), color = "black", linetype = "dashed") +
-    geom_point(size = 3, color = "black") +
-    facet_wrap(~Metric, scales = "free_x") +
-    scale_fill_jco(guide = guide_legend(reverse = TRUE)) +
-    scale_y_reverse(breaks = time_breaks, labels = time_breaks) +
-    labs(
-      title = "Alpha Diversity",
-      subtitle = title_sub,
-      x = "Hill number", y = "Time (Years BP)", fill = "Time Periods"
-    ) +
-    coord_cartesian(ylim = c(plot_max, plot_min)) +
-    theme_minimal(base_size = 12) +
-    theme(
-      axis.text.y = element_text(size = 12, colour = "black"),
-      axis.text.x = element_text(size = 12, colour = "black", angle = 45, vjust = .5),
-      axis.title.y = element_text(size = 12, face = "bold", colour = "black"),
-      axis.title.x = element_text(size = 12, face = "bold", colour = "black"),
-      strip.background = element_rect(fill = "#f0f0f0", color = NA),
-      strip.text.x = element_text(size = 14, face = "bold", colour = "black"),
-      plot.title = element_text(size = 16, face = "bold", colour = "black"),
-      legend.title = element_text(size = 16, face = "bold", colour = "black"),
-      legend.text = element_text(size = 12, colour = "black"),
-      legend.position = "right"
-    )
-
-  ggsave(filename = filename,
-         plot = p, path = here("analysis", "figures"),
-         width = 3300, height = 4200, units = "px", dpi = 300)
-
-  message("✅ Alpha diversity plot saved: ", filename)
-}
-
-
-
-
-
-
-
-
-
-
 plot_metric_dual <- function(df_long, metric_name, rects) {
   # filter to the metric
   d <- df_long %>% filter(Metric == metric_name)
@@ -383,9 +326,10 @@ plot_metric_dual <- function(df_long, metric_name, rects) {
     )
 }
 
+# ==============================================================
+# 11. Function to generate and save dual-axis alpha diversity plot
+# ==============================================================
 
-
-# --- Horizontal (side-by-side) figure with shared legend and dual x-axes ---
 plot_alpha_dual <- function(alpha_raw, alpha_srs, rects, filename) {
   df_long <- prep_alpha_long(alpha_raw, alpha_srs)
 
@@ -423,26 +367,14 @@ plot_alpha_dual <- function(alpha_raw, alpha_srs, rects, filename) {
   message("✅ Dual-axis alpha diversity (horizontal) plot saved: ", filename)
 }
 
-
-# 11. Generate and save one combined figure with dual axes
+# ==============================================================
+# 11. Generate and save figure
+# ==============================================================
 plot_alpha_dual(
   alpha_raw  = alpha_raw,
   alpha_srs  = alpha_srs,
   rects      = rects,
-  filename   = "supplementary-S3-alpha-diversity-RAW-vs-SRS-dual-axis.jpg"
+  filename   = "003-alpha-diversity.jpg"
 )
 
-
-
-
-
-# ==============================================================
-# 11. Generate and save figures (SRS and RAW)
-# ==============================================================
-# SRS
-plot_alpha(alpha_srs, "SRS standardized abundances", "supplementary-S3-alpha-diversity-srs.jpg")
-
-# RAW
-plot_alpha(alpha_raw, "Raw (unstandardized) abundances", "supplementary-S3-alpha-diversity-raw.jpg")
-
-message("✅ Alpha diversity (SRS & Raw) figures generated successfully.")
+message("✅ Alpha diversity generated and figure saved: '003-alpha-diversity.jpg'")
