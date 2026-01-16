@@ -384,8 +384,14 @@ p_all <- (p_shan | p_simp) +
   )
 
 # ==============================================================
-# 12. Save plot
+# 12. Save plots
 # ==============================================================
+
+# Save individual plots as RDS for manuscript figure assembly
+saveRDS(p_shan, file = here::here("analysis", "data", "derived_data", "gamma_shan.rds"))
+saveRDS(p_simp, file = here::here("analysis", "data", "derived_data", "gamma_simp.rds"))
+
+# Save dual-plot
 ggsave(
   filename = "003-gamma-diversity.jpg",
   plot = p_all,
@@ -394,4 +400,5 @@ ggsave(
 )
 
 message("✅ Dual-axis gamma diversity (horizontal) plot saved: 003-gamma-diversity.jpg")
+
 
